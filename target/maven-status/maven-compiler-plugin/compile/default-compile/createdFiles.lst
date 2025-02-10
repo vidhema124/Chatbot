@@ -1,0 +1,8 @@
+chatbot\entity\ChatEntity.class
+chatbot\ChatbotApplication.class
+chatbot\serviceimpl\ChatServiceIMPL.class
+chatbot\service\ChatService.class
+chatbot\controller\ChatController.class
+chatbot\respository\ChatRepository.class
+chatbot\config\Config$1.class
+chatbot\config\Config.class
