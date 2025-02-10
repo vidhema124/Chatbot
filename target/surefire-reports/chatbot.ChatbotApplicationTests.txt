@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: chatbot.ChatbotApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.25 s -- in chatbot.ChatbotApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.18 s -- in chatbot.ChatbotApplicationTests
