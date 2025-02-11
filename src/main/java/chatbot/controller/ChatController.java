@@ -25,4 +25,8 @@ public class ChatController {
         String response = chatService.login(email, password);
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/get")
+    public String get(){
+        return "hello";
+    }
 }
