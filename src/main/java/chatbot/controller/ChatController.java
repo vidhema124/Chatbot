@@ -18,7 +18,7 @@ public class ChatController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/login")
+    @GetMapping("/login")
     public ResponseEntity<String> login(@RequestParam String email, @RequestParam String password) {
         String response = chatService.login(email, password);
         return ResponseEntity.ok(response);
