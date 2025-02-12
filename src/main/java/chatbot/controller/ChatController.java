@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 public class ChatController {
-
     ChatService chatService;
-
     @PostMapping("/signup")
     public ResponseEntity<String> signUp(@RequestBody ChatEntity chatEntity) {
         String response = chatService.signUp(chatEntity);
