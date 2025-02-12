@@ -25,12 +25,18 @@ public class ChatController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestParam String email, @RequestParam String password) {
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> requestBody) {
+        
+        String email = requestBody.get("email");
+        String password = requestBody.get("password");
+
+       
         Map<String, Object> response = chatService.login(email, password);
+        
+        // Return the response as JSON
         return ResponseEntity.ok(response);
+
+
     }
-
-
-   
 }
