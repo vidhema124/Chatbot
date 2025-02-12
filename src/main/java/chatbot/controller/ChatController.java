@@ -1,13 +1,18 @@
 package chatbot.controller;
 
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import chatbot.entity.ChatEntity;
 import chatbot.service.ChatService;
 import lombok.AllArgsConstructor;
-
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @AllArgsConstructor
@@ -21,17 +26,11 @@ public class ChatController {
     }
 
     @GetMapping("/login")
-    public ResponseEntity<String> login(@RequestParam String email, @RequestParam String password) {
-        String response = chatService.login(email, password);
+    public ResponseEntity<Map<String, Object>> login(@RequestParam String email, @RequestParam String password) {
+        Map<String, Object> response = chatService.login(email, password);
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/get")
-    public String get(){
-        return "hello";
-    }
 
-    @GetMapping("/getAll")
-    public List<ChatEntity> getAllChats() {
-        return chatService.getAllChats();
-    }
+
+   
 }
