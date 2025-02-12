@@ -4,6 +4,8 @@ import chatbot.entity.ChatEntity;
 import chatbot.service.ChatService;
 import lombok.AllArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,5 +28,10 @@ public class ChatController {
     @GetMapping("/get")
     public String get(){
         return "hello";
+    }
+
+    @GetMapping("/getAll")
+    public List<ChatEntity> getAllChats() {
+        return chatService.getAllChats();
     }
 }

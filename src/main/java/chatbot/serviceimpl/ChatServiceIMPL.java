@@ -1,5 +1,6 @@
 package chatbot.serviceimpl;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -34,5 +35,9 @@ public class ChatServiceIMPL implements ChatService {
             return "Login successful!";
         }
         return "Invalid email or password!";
+    }
+    @Override
+    public List<ChatEntity> getAllChats() {
+        return chatRepository.findAll();
     }
 }
