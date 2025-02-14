@@ -1,0 +1,23 @@
+package chatbot.entity;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+ @Getter
+ @Setter
+ @ToString
+@Document(collection = "chat_messages")
+public class ChatMessage {
+
+    @Id
+    private String id;
+
+    private String userQuery;
+    private String chatbotResponse;
+
+    
+}

@@ -1,5 +1,6 @@
 package chatbot.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -18,25 +19,25 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 public class ChatController {
-    ChatService chatService;
-    @PostMapping("/signup")
-    public ResponseEntity<String> signUp(@RequestBody ChatEntity chatEntity) {
-        String response = chatService.signUp(chatEntity);
-        return ResponseEntity.ok(response);
-    }
+	ChatService chatService;
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> requestBody) {
-        
-        String email = requestBody.get("email");
-        String password = requestBody.get("password");
+	@PostMapping("/signup")
+	public ResponseEntity<Map<String, Object>> signUp(@RequestBody ChatEntity chatEntity) {
+		String responseMessage = chatService.signUp(chatEntity);
+		Map<String, Object> response = new HashMap<>();
+		if ("Email already exists!".equals(responseMessage)) {
+			response.put("message", "Email already exists!");
+		} else {
+			response.put("message", "User registered successfully!");
+		}
+		return ResponseEntity.ok(response);
+	}
 
-       
-        Map<String, Object> response = chatService.login(email, password);
-        
-        // Return the response as JSON
-        return ResponseEntity.ok(response);
-
-
-    }
+	@PostMapping("/login")
+	public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> requestBody) {
+		String email = requestBody.get("email");
+		String password = requestBody.get("password");
+		Map<String, Object> response = chatService.login(email, password);
+		return ResponseEntity.ok(response);
+	}
 }
