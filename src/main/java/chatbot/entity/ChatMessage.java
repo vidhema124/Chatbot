@@ -1,23 +1,21 @@
 package chatbot.entity;
 
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.LocalDateTime;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
- @Getter
- @Setter
- @ToString
-@Document(collection = "chat_messages")
+@Document(collection = "chat_messages")  
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ChatMessage {
 
     @Id
     private String id;
-
-    private String userQuery;
-    private String chatbotResponse;
-
-    
+    private String userMessage;
+    private String botResponse;
+    private LocalDateTime timestamp = LocalDateTime.now();
 }
