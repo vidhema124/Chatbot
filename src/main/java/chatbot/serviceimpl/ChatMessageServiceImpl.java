@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -73,7 +74,31 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public List<ChatMessage> getHistory() {
-		List<ChatMessage> response=chatMessageRepository.findAll();
-	    return response;
+		List<ChatMessage> response = chatMessageRepository.findAll();
+		return response;
 	}
+
+	@Override
+	public Optional<ChatMessage> getById(String id) {
+		return chatMessageRepository.findById(id);
+	}
+
+	@Override
+	public Optional<ChatMessage> updateById(String id, ChatMessage updatedMessage) {
+		return chatMessageRepository.findById(id).map(existingMessage -> {
+			existingMessage.setUserMessage(updatedMessage.getUserMessage());
+			existingMessage.setBotResponse(updatedMessage.getBotResponse());
+			return chatMessageRepository.save(existingMessage);
+		});
+	}
+
+	@Override
+	public boolean deleteById(String id) {
+		if (chatMessageRepository.existsById(id)) {
+			chatMessageRepository.deleteById(id);
+			return true;
+		}
+		return false;
+	}
+
 }
