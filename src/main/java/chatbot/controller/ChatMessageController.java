@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/chatbot")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 public class ChatMessageController {
 
 	private final ChatbotMessageService chatbotService;
