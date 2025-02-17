@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import chatbot.entity.ChatMessage;
 import chatbot.respository.ChatMessageRepository;
 import chatbot.service.ChatbotMessageService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -23,6 +24,10 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Value("${chatbot.api.key}")
 	private String apiKey;
+	@PostConstruct
+public void logApiKey() {
+    System.out.println("API Key: " + apiKey);  // Logs the API Key to verify it's being injected
+}
 
 	private static final String AI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
