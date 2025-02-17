@@ -24,10 +24,6 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Value("${chatbot.api.key}")
 	private String apiKey;
-	@PostConstruct
-public void logApiKey() {
-    System.out.println("API Key: " + apiKey);  // Logs the API Key to verify it's being injected
-}
 
 	private static final String AI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
