@@ -12,6 +12,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -30,46 +31,60 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public String getChatResponse(String userMessage) {
-		int maxRetries = 3;
-		int retryDelay = 2000;
+	    int maxRetries = 3;
+	    int retryDelay = 2000;
 
-		for (int attempt = 1; attempt <= maxRetries; attempt++) {
-			try {
-				HttpHeaders headers = new HttpHeaders();
-				headers.setContentType(MediaType.APPLICATION_JSON);
+	    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+	        try {
+	            HttpHeaders headers = new HttpHeaders();
+	            headers.setContentType(MediaType.APPLICATION_JSON);
 
-				String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
-				HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+	            String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
+	            HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
-				ResponseEntity<String> response = restTemplate.exchange(AI_API_URL + "?key=" + apiKey, HttpMethod.POST,
-						request, String.class);
+	            ResponseEntity<String> response = restTemplate.exchange(
+	                AI_API_URL + "?key=" + apiKey, 
+	                HttpMethod.POST, 
+	                request, 
+	                String.class
+	            );
 
-				if (response.getStatusCode() == HttpStatus.OK) {
-					ObjectMapper objectMapper = new ObjectMapper();
-					JsonNode jsonNode = objectMapper.readTree(response.getBody());
+	            if (response.getStatusCode() == HttpStatus.OK) {
+	                ObjectMapper objectMapper = new ObjectMapper();
+	                JsonNode jsonNode = objectMapper.readTree(response.getBody());
 
-					String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0)
-							.path("text").asText();
+	                String botResponse = jsonNode.path("candidates")
+	                        .get(0)
+	                        .path("content")
+	                        .path("parts")
+	                        .get(0)
+	                        .path("text")
+	                        .asText();
 
-					ChatMessage chatMessage = ChatMessage.builder().userMessage(userMessage).botResponse(botResponse)
-							.build();
-					chatMessageRepository.save(chatMessage);
+	                // Correctly building the ChatMessage object
+	                ChatMessage chatMessage = ChatMessage.builder()
+	                        .userSearch(List.of(
+	                                ChatMessage.UserSearch.builder()
+	                                        .userMessage(userMessage)
+	                                        .botResponse(botResponse)
+	                                        .build()))
+	                        .build();
 
-					return botResponse;
-				}
-			} catch (Exception e) {
-				if (attempt < maxRetries) {
-					try {
-						TimeUnit.MILLISECONDS.sleep(retryDelay);
-						retryDelay *= 2;
-					} catch (InterruptedException ignored) {
-					}
-				} else {
-					return "Sorry, I am currently unavailable. Please try again later.";
-				}
-			}
-		}
-		return "Failed to fetch response from AI.";
+//	                chatMessageRepository.save(chatMessage);
+	                return botResponse;
+	            }
+	        } catch (Exception e) {
+	            if (attempt < maxRetries) {
+	                try {
+	                    TimeUnit.MILLISECONDS.sleep(retryDelay);
+	                    retryDelay *= 2;
+	                } catch (InterruptedException ignored) {}
+	            } else {
+	                return "Sorry, I am currently unavailable. Please try again later.";
+	            }
+	        }
+	    }
+	    return "Failed to fetch response from AI.";
 	}
 
 	@Override
@@ -85,12 +100,18 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public Optional<ChatMessage> updateById(String id, ChatMessage updatedMessage) {
-		return chatMessageRepository.findById(id).map(existingMessage -> {
-			existingMessage.setUserMessage(updatedMessage.getUserMessage());
-			existingMessage.setBotResponse(updatedMessage.getBotResponse());
-			return chatMessageRepository.save(existingMessage);
-		});
+	    return chatMessageRepository.findById(id).map(existingMessage -> {
+	        if (updatedMessage.getUserSearch() != null && !updatedMessage.getUserSearch().isEmpty()) {
+	            List<ChatMessage.UserSearch> mergedUserSearch = new ArrayList<>(existingMessage.getUserSearch());
+	            mergedUserSearch.addAll(updatedMessage.getUserSearch());
+
+	            existingMessage.setUserSearch(mergedUserSearch);
+	        }
+	        return chatMessageRepository.save(existingMessage);
+	    });
 	}
+
+
 
 	@Override
 	public boolean deleteById(String id) {
@@ -101,4 +122,8 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 		return false;
 	}
 
+	@Override
+    public ChatMessage saveChatMessage(ChatMessage chatMessage) {
+        return chatMessageRepository.save(chatMessage);
+    }
 }

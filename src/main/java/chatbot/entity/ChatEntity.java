@@ -13,6 +13,7 @@ import lombok.ToString;
 public class ChatEntity {
 
 	private String id;
+	private String name;
 	private String email;
 	private String password;
 

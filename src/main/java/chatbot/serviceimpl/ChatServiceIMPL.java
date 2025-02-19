@@ -72,8 +72,30 @@ public class ChatServiceIMPL implements ChatService {
 	}
 
 	@Override
-	public List<ChatEntity> getAllChats() {
-		return chatRepository.findAll();
-	}
+	public String updateUser(String id, ChatEntity updatedChatEntity) {
+		Optional<ChatEntity> existingUserOptional = chatRepository.findById(id);
 
+		if (!existingUserOptional.isPresent()) {
+			return "User not found!";
+		}
+
+		ChatEntity existingUser = existingUserOptional.get();
+
+		if (!existingUser.getEmail().equals(updatedChatEntity.getEmail())) {
+			Optional<ChatEntity> emailCheck = chatRepository.findByEmail(updatedChatEntity.getEmail());
+			if (emailCheck.isPresent()) {
+				return "Email is already taken!";
+			}
+			existingUser.setEmail(updatedChatEntity.getEmail());
+		}
+		existingUser.setName(updatedChatEntity.getName());
+
+		if (!updatedChatEntity.getPassword().isEmpty()) {
+			String encryptedPassword = passwordEncoder.encode(updatedChatEntity.getPassword());
+			existingUser.setPassword(encryptedPassword);
+		}
+
+		chatRepository.save(existingUser);
+		return "User updated successfully!";
+	}
 }
