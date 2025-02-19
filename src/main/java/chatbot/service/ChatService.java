@@ -7,7 +7,11 @@ import chatbot.entity.ChatEntity;
 
 public interface ChatService {
     String signUp(ChatEntity chatEntity);
+
     Map<String, Object> login(String email, String password);
+
     List<ChatEntity> getAllChats();
-//	Users userLogin(Users userEntity);
+    // Users userLogin(Users userEntity);
+
+    public String updateUser(String id, ChatEntity updatedChatEntity);
 }

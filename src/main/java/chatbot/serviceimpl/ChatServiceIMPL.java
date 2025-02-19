@@ -14,8 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
-
 import chatbot.entity.ChatEntity;
 import chatbot.respository.ChatRepository;
 import chatbot.service.ChatService;
@@ -30,19 +28,21 @@ public class ChatServiceIMPL implements ChatService {
 
 	private final ChatRepository chatRepository;
 	private final PasswordEncoder passwordEncoder;
-@Override
+
+	@Override
 	public String signUp(ChatEntity chatEntity) {
 
 		Optional<ChatEntity> existingUser = chatRepository.findByEmail(chatEntity.getEmail());
 		if (existingUser.isPresent()) {
 			return "Email already exists!";
 		}
-		
+
 		String encryptedPassword = passwordEncoder.encode(chatEntity.getPassword());
 		chatEntity.setPassword(encryptedPassword);
 		chatRepository.save(chatEntity);
 		return "User registered successfully!";
 	}
+
 	@Override
 	public Map<String, Object> login(String email, String password) {
 		Optional<ChatEntity> user = chatRepository.findByEmail(email);
@@ -74,6 +74,34 @@ public class ChatServiceIMPL implements ChatService {
 	@Override
 	public List<ChatEntity> getAllChats() {
 		return chatRepository.findAll();
+	}
+
+	@Override
+	public String updateUser(String id, ChatEntity updatedChatEntity) {
+		Optional<ChatEntity> existingUserOptional = chatRepository.findById(id);
+
+		if (!existingUserOptional.isPresent()) {
+			return "User not found!";
+		}
+
+		ChatEntity existingUser = existingUserOptional.get();
+
+		if (!existingUser.getEmail().equals(updatedChatEntity.getEmail())) {
+			Optional<ChatEntity> emailCheck = chatRepository.findByEmail(updatedChatEntity.getEmail());
+			if (emailCheck.isPresent()) {
+				return "Email is already taken!";
+			}
+			existingUser.setEmail(updatedChatEntity.getEmail());
+		}
+		existingUser.setName(updatedChatEntity.getName());
+
+		if (!updatedChatEntity.getPassword().isEmpty()) {
+			String encryptedPassword = passwordEncoder.encode(updatedChatEntity.getPassword());
+			existingUser.setPassword(encryptedPassword);
+		}
+
+		chatRepository.save(existingUser);
+		return "User updated successfully!";
 	}
 
 }

@@ -15,5 +15,6 @@ public class ChatEntity {
 	private String id;
 	private String email;
 	private String password;
+	private String name;
 
 }
