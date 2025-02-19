@@ -38,31 +38,31 @@ public class ChatMessageController {
 	}
 
 	@PutMapping("/update-by/{id}")
-	public ResponseEntity<Map<String, Object>> updateChatMessageById(@PathVariable String id, @RequestBody ChatMessage updatedMessage) {
-	    Optional<ChatMessage> updatedChatMessage = chatbotService.updateById(id, updatedMessage);
+	public ResponseEntity<Map<String, Object>> updateChatMessageById(@PathVariable String id,
+			@RequestBody ChatMessage updatedMessage) {
+		Optional<ChatMessage> updatedChatMessage = chatbotService.updateById(id, updatedMessage);
 
-	    Map<String, Object> response = new HashMap<>();
-	    if (updatedChatMessage.isPresent()) {
-	        response.put("message", "Chat message updated successfully.");
-	        return ResponseEntity.ok(response);
-	    } else {
-	        response.put("message", "Chat message with ID " + id + " does not exist.");
-	        return ResponseEntity.status(404).body(response);
-	    }
+		Map<String, Object> response = new HashMap<>();
+		if (updatedChatMessage.isPresent()) {
+			response.put("message", "Chat message updated successfully.");
+			return ResponseEntity.ok(response);
+		} else {
+			response.put("message", "Chat message with ID " + id + " does not exist.");
+			return ResponseEntity.status(404).body(response);
+		}
 	}
 
-	    @DeleteMapping("/delete-by/{id}")
-	    public ResponseEntity<Map<String, Object>> deleteChatMessageById(@PathVariable String id) {
-	        boolean deleted = chatbotService.deleteById(id);
+	@DeleteMapping("/delete-by/{id}")
+	public ResponseEntity<Map<String, Object>> deleteChatMessageById(@PathVariable String id) {
+		boolean deleted = chatbotService.deleteById(id);
 
-	        Map<String, Object> response = new HashMap<>();
-	        if (deleted) {
-	            response.put("message", "Chat message deleted successfully.");
-	            return ResponseEntity.ok(response);
-	        } else {
-	            response.put("message", "Chat message with ID " + id + " does not exist.");
-	            return ResponseEntity.status(404).body(response);
-	        }
-	    }
+		Map<String, Object> response = new HashMap<>();
+		if (deleted) {
+			response.put("message", "Chat message deleted successfully.");
+			return ResponseEntity.ok(response);
+		} else {
+			response.put("message", "Chat message with ID " + id + " does not exist.");
+			return ResponseEntity.status(404).body(response);
+		}
 	}
-
+}
