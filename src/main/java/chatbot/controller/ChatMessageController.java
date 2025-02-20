@@ -11,6 +11,9 @@ import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+
 
 @RestController
 @RequestMapping("/chatbot")
@@ -20,10 +23,20 @@ public class ChatMessageController {
 
 	private final ChatbotMessageService chatbotService;
 
+//	@GetMapping("/search")
+//	public String chat(@RequestParam String message) {
+//		return chatbotService.getChatResponse(message);
+//	}
+	
 	@GetMapping("/search")
 	public String chat(@RequestParam String message) {
-		return chatbotService.getChatResponse(message);
+	    // URL-decode the message parameter
+	    String decodedMessage = URLDecoder.decode(message, StandardCharsets.UTF_8);
+	    
+	    // Now, pass the decoded message to the chatbotService
+	    return chatbotService.getChatResponse(decodedMessage);
 	}
+
 
 	@GetMapping("/search-history")
 	public ResponseEntity<List<ChatMessage>> historyChake() {
@@ -70,5 +83,4 @@ public class ChatMessageController {
 	        ChatMessage savedMessage = chatbotService.saveChatMessage(chatMessage);
 	        return ResponseEntity.ok(savedMessage);
 	    }
-
 	}
