@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +23,7 @@ import lombok.AllArgsConstructor;
 @RestController
 @AllArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
+//@RequestMapping("/api")
 public class ChatController {
 	ChatService chatService;
 
@@ -91,35 +93,32 @@ public class ChatController {
 		return ResponseEntity.badRequest().body("Invalid or expired token!");
 	}
 	
-	  @PostMapping("/signup-verification")
-	    public ResponseEntity<Map<String, Object>> signUp(@RequestBody ChatEntity chatEntity) {
-	        Map<String, Object> response = new HashMap<>();
-	        if (!isValidEmail(chatEntity.getEmail())) {
-	            response.put("message", "Invalid email format. Please check your email format.");
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-	        }
-	        String responseMessage = chatService.signUp(chatEntity);
-	        if ("Email already exists!".equals(responseMessage)) {
-	            response.put("message", "Email already exists!");
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-	        }
+	@PostMapping("/signup-verification")
+	public ResponseEntity<Map<String, Object>> signUp(@RequestBody ChatEntity chatEntity) {
+	    Map<String, Object> response = new HashMap<>();
 
-	        ChatEntity registeredUser = chatService.registerUser(chatEntity);
-
-	        if (registeredUser != null) {
-	            response.put("message", "User registered successfully! Verification email sent.");
-	            return ResponseEntity.ok(response);
-	        } else {
-	            response.put("message", "Error sending verification email.");
-	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	        }
+	    if (!isValidEmail(chatEntity.getEmail())) {
+	        response.put("message", "Invalid email format. Please check your email format.");
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 	    }
-
-	  
-	    private boolean isValidEmail(String email) {
-	        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-	        Pattern pattern = Pattern.compile(emailRegex);
-	        return pattern.matcher(email).matches();
+	    String responseMessage = chatService.signUp(chatEntity);
+	    if ("Email already exists!".equals(responseMessage)) {
+	        response.put("message", "Email already exists!");
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 	    }
-	
+	    ChatEntity registeredUser = chatService.registerUser(chatEntity);
+	    if (registeredUser != null) {
+	        response.put("message", "User registered successfully! Verification email sent.");
+	        return ResponseEntity.ok(response);
+	    } else {
+	        response.put("message", "Error sending verification email.");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
+	}
+
+	private boolean isValidEmail(String email) {
+	    String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+	    Pattern pattern = Pattern.compile(emailRegex);
+	    return pattern.matcher(email).matches();
+	}
 }

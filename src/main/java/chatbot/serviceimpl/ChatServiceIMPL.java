@@ -47,40 +47,43 @@ public class ChatServiceIMPL implements ChatService {
 //	    }
 //	
 
-	  @Override
-	  public Map<String, Object> login(String email, String password) {
-	      Optional<ChatEntity> user = chatRepository.findByEmail(email);
+	@Override
+	public Map<String, Object> login(String email, String password) {
+	    Optional<ChatEntity> user = chatRepository.findByEmail(email);
 
-	      if (user.isPresent()) {
-	          if (passwordEncoder.matches(password, user.get().getPassword())) {
-	              if (user.get().isVerified()) {
-	                  SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-	                  String token = Jwts.builder()
-	                          .setSubject(email)
-	                          .setIssuedAt(new Date())
-	                          .setExpiration(new Date(System.currentTimeMillis() + 3600000)) 
-	                          .signWith(key, SignatureAlgorithm.HS256)
-	                          .compact();
+	    if (user.isPresent()) {
+	        ChatEntity userData = user.get();
+	        if (passwordEncoder.matches(password, userData.getPassword())) {
+	            if (userData.isVerified()) {
+	                SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+	                String token = Jwts.builder()
+	                        .setSubject(email)
+	                        .setIssuedAt(new Date())
+	                        .setExpiration(new Date(System.currentTimeMillis() + 3600000)) 
+	                        .signWith(key, SignatureAlgorithm.HS256)
+	                        .compact();
+	                Map<String, Object> response = new HashMap<>();
+	                response.put("message", "Login successfully");
+	                response.put("status", 200);
+	                response.put("token", token);
+	                response.put("name", userData.getName());  
+	                response.put("email", userData.getEmail()); 
+	                response.put("image", userData.getImage());  
 
-	                  
-	                  Map<String, Object> response = new HashMap<>();
-	                  response.put("message", "Login successfully");
-	                  response.put("status", 200);
-	                  response.put("token", token);
-	                  return response;
-	              } else {
-	                  Map<String, Object> errorResponse = new HashMap<>();
-	                  errorResponse.put("message", "Please check your email and verify your email address.");
-	                  errorResponse.put("status", 400);
-	                  return errorResponse;
-	              }
-	          }
-	      }
-	      Map<String, Object> errorResponse = new HashMap<>();
-	      errorResponse.put("message", "Email or Password is incorrect.");
-	      errorResponse.put("status", 400);  
-	      return errorResponse;
-	  }
+	                return response;
+	            } else {
+	                Map<String, Object> errorResponse = new HashMap<>();
+	                errorResponse.put("message", "Please check your email and verify your email address.");
+	                errorResponse.put("status", 400);
+	                return errorResponse;
+	            }
+	        }
+	    }
+	    Map<String, Object> errorResponse = new HashMap<>();
+	    errorResponse.put("message", "Email or Password is incorrect.");
+	    errorResponse.put("status", 400);  
+	    return errorResponse;
+	}
 
 
 	@Override
@@ -173,63 +176,61 @@ public class ChatServiceIMPL implements ChatService {
 	}
 	
 
-    @Autowired
-    private JavaMailSender mailSender;
+	@Autowired
+	private JavaMailSender mailSender;
 
-    private final String FRONTEND_URL = "https://chat.chatbotapp.ai/auth/action?mode=verifyEmail&oobCode=%s";
+	private final String FRONTEND_URL = "https://vchatai.netlify.app/verify-email?token=%s";
 
-    @Override
-    public String signUp(ChatEntity chatEntity) {
-        Optional<ChatEntity> existingUser = chatRepository.findByEmail(chatEntity.getEmail());
-        if (existingUser.isPresent()) {
-            return "Email already exists!";
-        }
+	@Override
+	public String signUp(ChatEntity chatEntity) {
+	    Optional<ChatEntity> existingUser = chatRepository.findByEmail(chatEntity.getEmail());
+	    if (existingUser.isPresent()) {
+	        return "Email already exists!";
+	    }
+	    String encryptedPassword = passwordEncoder.encode(chatEntity.getPassword());
+	    chatEntity.setPassword(encryptedPassword);
+	    chatRepository.save(chatEntity);
 
-        String encryptedPassword = passwordEncoder.encode(chatEntity.getPassword());
-        chatEntity.setPassword(encryptedPassword);
-        chatRepository.save(chatEntity);
+	    return "User registered successfully!";
+	}
 
-        return "User registered successfully!";
-    }
+	@Override
+	public ChatEntity registerUser(ChatEntity user) {
+	    Optional<ChatEntity> existingUserOpt = chatRepository.findByEmail(user.getEmail());
+	    if (existingUserOpt.isPresent()) {
+	        ChatEntity userToSave = existingUserOpt.get();
+	        userToSave.setVerificationToken(UUID.randomUUID().toString());
+	        ChatEntity savedUser = chatRepository.save(userToSave);
+	        sendVerificationEmail(savedUser.getEmail(), savedUser.getVerificationToken());
 
-    @Override
-    public ChatEntity registerUser(ChatEntity user) {
-        Optional<ChatEntity> existingUserOpt = chatRepository.findByEmail(user.getEmail());
-        if (existingUserOpt.isPresent()) {
-            ChatEntity userToSave = existingUserOpt.get();
-            userToSave.setVerificationToken(UUID.randomUUID().toString());
-            ChatEntity savedUser = chatRepository.save(userToSave);
-            sendVerificationEmail(savedUser.getEmail(), savedUser.getVerificationToken());
-            return savedUser;
-        } else {
-            return null; 
-        }
-    }
+	        return savedUser;
+	    } else {
+	        return null; 
+	    }
+	}
 
-    private void sendVerificationEmail(String email, String token) {
-        String subject = "Follow this link to verify your email address.";
-        String url = String.format(FRONTEND_URL, token);
+	private void sendVerificationEmail(String email, String token) {
+	    String subject = "Follow this link to verify your email address.";
+	    String url = String.format(FRONTEND_URL, token);
 
-        String emailBody = "Hello,\n\n"
-                + "Subject: " + subject + "\n\n"
-                + "Follow this link to verify your email address:\n\n"
-                + url + "\n\n"
-                + "If you didn’t ask to verify this address, you can ignore this email.\n\n"
-                + "Thanks,\n\n"
-                + "Your Chatbot App team";
+	    String emailBody = "Hello,\n\n"
+	            + "Subject: " + subject + "\n\n"
+	            + "Follow this link to verify your email address:\n\n"
+	            + url + "\n\n"
+	            + "If you didn’t ask to verify this address, you can ignore this email.\n\n"
+	            + "Thanks,\n\n"
+	            + "Your Chatbot App team";
 
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-            helper.setTo(email);
-            helper.setSubject(subject);
-            helper.setText(emailBody, false);
-            mailSender.send(mimeMessage);
-        } catch (MessagingException e) {
-            e.printStackTrace();
-        }
-    }
-
-
+	    try {
+	        MimeMessage mimeMessage = mailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+	        helper.setTo(email);
+	        helper.setSubject(subject);
+	        helper.setText(emailBody, false); 
+	        mailSender.send(mimeMessage);
+	    } catch (MessagingException e) {
+	        e.printStackTrace();
+	    }
+	}
 
 }
