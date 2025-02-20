@@ -5,16 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-
 
 import chatbot.entity.ChatEntity;
 import chatbot.respository.ChatRepository;
@@ -22,6 +23,8 @@ import chatbot.service.ChatService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -30,42 +33,50 @@ public class ChatServiceIMPL implements ChatService {
 
 	private final ChatRepository chatRepository;
 	private final PasswordEncoder passwordEncoder;
-@Override
-	public String signUp(ChatEntity chatEntity) {
 
-		Optional<ChatEntity> existingUser = chatRepository.findByEmail(chatEntity.getEmail());
-		if (existingUser.isPresent()) {
-			return "Email already exists!";
-		}
-		
-		String encryptedPassword = passwordEncoder.encode(chatEntity.getPassword());
-		chatEntity.setPassword(encryptedPassword);
-		chatRepository.save(chatEntity);
-		return "User registered successfully!";
-	}
+	  @Override
+	    public String signUp(ChatEntity chatEntity) {
+	        Optional<ChatEntity> existingUser = chatRepository.findByEmail(chatEntity.getEmail());
+	        if (existingUser.isPresent()) {
+	            return "Email already exists!";
+	        }
+	        String encryptedPassword = passwordEncoder.encode(chatEntity.getPassword());
+	        chatEntity.setPassword(encryptedPassword);
+	        chatRepository.save(chatEntity);
+	        return "User registered successfully!";
+	    }
+	
+
 	@Override
 	public Map<String, Object> login(String email, String password) {
 		Optional<ChatEntity> user = chatRepository.findByEmail(email);
 
 		if (user.isPresent()) {
 			if (passwordEncoder.matches(password, user.get().getPassword())) {
+				if (user.get().isVerified()) {
+					SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+					String token = Jwts.builder().setSubject(email).setIssuedAt(new Date())
+							.setExpiration(new Date(System.currentTimeMillis() + 3600000))
+							.signWith(key, SignatureAlgorithm.HS256).compact();
 
-				SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-				String token = Jwts.builder().setSubject(email).setIssuedAt(new Date())
-						.setExpiration(new Date(System.currentTimeMillis() + 3600000))
-						.signWith(key, SignatureAlgorithm.HS256).compact();
+					Map<String, Object> response = new HashMap<>();
+					response.put("message", "Login successfully");
+					response.put("status", 200);
+					response.put("token", token);
 
-				Map<String, Object> response = new HashMap<>();
-				response.put("message", "Login successfully");
-				response.put("status", 200);
-				response.put("token", token);
+					return response;
+				} else {
+					Map<String, Object> errorResponse = new HashMap<>();
+					errorResponse.put("message", "Please check your email and verify your email address.");
+					errorResponse.put("status", 401);
 
-				return response;
+					return errorResponse;
+				}
 			}
 		}
 
 		Map<String, Object> errorResponse = new HashMap<>();
-		errorResponse.put("message", "Email Or Password Wrong");
+		errorResponse.put("message", "Email or Password is incorrect.");
 		errorResponse.put("status", 401);
 
 		return errorResponse;
@@ -88,14 +99,65 @@ public class ChatServiceIMPL implements ChatService {
 			}
 			existingUser.setEmail(updatedChatEntity.getEmail());
 		}
+
 		existingUser.setName(updatedChatEntity.getName());
 
-		if (!updatedChatEntity.getPassword().isEmpty()) {
+		if (updatedChatEntity.getPassword() != null && !updatedChatEntity.getPassword().isEmpty()) {
 			String encryptedPassword = passwordEncoder.encode(updatedChatEntity.getPassword());
 			existingUser.setPassword(encryptedPassword);
 		}
 
+		if (updatedChatEntity.getImage() != null && !updatedChatEntity.getImage().isEmpty()) {
+			existingUser.setImage(updatedChatEntity.getImage());
+		}
+
 		chatRepository.save(existingUser);
 		return "User updated successfully!";
+	}
+
+	@Autowired
+	private JavaMailSender mailSender;
+
+	private final String FRONTEND_URL = "https://www.linkwebsite.com//d=%s&-k&#";
+	@Override
+	public ChatEntity registerUser(ChatEntity user) {
+	    Optional<ChatEntity> existingUserOpt = chatRepository.findByEmail(user.getEmail());
+	    if (existingUserOpt.isPresent()) {
+	        ChatEntity userToSave = existingUserOpt.get();
+	        userToSave.setVerificationToken(UUID.randomUUID().toString());
+	        ChatEntity savedUser = chatRepository.save(userToSave);
+	        sendVerificationEmail(savedUser.getEmail(), savedUser.getVerificationToken());
+	        return savedUser; 
+	    } else {
+	        return null; 
+	    }
+	}
+	private void sendVerificationEmail(String email, String token) {
+	    String subject = "Verify Your Email";
+	    String url = FRONTEND_URL + "/verify?token=" + token; 
+
+	    try {
+	        MimeMessage mimeMessage = mailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+	        helper.setTo(email);
+	        helper.setSubject(subject);
+	        helper.setText(url, false);
+	        mailSender.send(mimeMessage);
+	    } catch (MessagingException e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	@Override
+	public boolean verifyUser(String token) {
+		Optional<ChatEntity> optionalUser = chatRepository.findByVerificationToken(token);
+		if (optionalUser.isPresent()) {
+			ChatEntity user = optionalUser.get();
+			user.setVerified(true);
+			user.setVerificationToken(null);
+			chatRepository.save(user);
+			return true;
+		}
+		return false;
 	}
 }

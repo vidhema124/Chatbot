@@ -64,7 +64,7 @@ public class ChatMessageController {
 	            return ResponseEntity.status(404).body(response);
 	        }
 	    }
-
+	    
 	    @PostMapping("/create")
 	    public ResponseEntity<ChatMessage> createChatMessage(@RequestBody ChatMessage chatMessage) {
 	        ChatMessage savedMessage = chatbotService.saveChatMessage(chatMessage);

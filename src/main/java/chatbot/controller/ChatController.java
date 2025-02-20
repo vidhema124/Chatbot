@@ -2,7 +2,9 @@ package chatbot.controller;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,18 +25,28 @@ import lombok.AllArgsConstructor;
 public class ChatController {
 	ChatService chatService;
 
-	@PostMapping("/signup")
-	public ResponseEntity<Map<String, Object>> signUp(@RequestBody ChatEntity chatEntity) {
-		String responseMessage = chatService.signUp(chatEntity);
-		Map<String, Object> response = new HashMap<>();
-		if ("Email already exists!".equals(responseMessage)) {
-			response.put("message", "Email already exists!");
-		} else {
-			response.put("message", "User registered successfully!");
-		}
-		return ResponseEntity.ok(response);
-	}
+	 @PostMapping("/signup")
+	    public ResponseEntity<Map<String, Object>> signUp(@RequestBody ChatEntity chatEntity) {
+	        Map<String, Object> response = new HashMap<>();
+	        if (!isValidEmail(chatEntity.getEmail())) {
+	            response.put("message", "Invalid email format. Please check your email format.");
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	        }
+	        String responseMessage = chatService.signUp(chatEntity);
+	        if ("Email already exists!".equals(responseMessage)) {
+	            response.put("message", "Email already exists!");
+	        } else {
+	            response.put("message", "User registered successfully!");
+	        }
+	        return ResponseEntity.ok(response);
+	    }
 
+	    private boolean isValidEmail(String email) {
+	        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+	        Pattern pattern = Pattern.compile(emailRegex);
+	        return pattern.matcher(email).matches();
+	    }
+	
 	@PostMapping("/login")
 	public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> requestBody) {
 		String email = requestBody.get("email");
@@ -42,10 +54,32 @@ public class ChatController {
 		Map<String, Object> response = chatService.login(email, password);
 		return ResponseEntity.ok(response);
 	}
-	
+
 	@PutMapping("/update/{id}")
 	public ResponseEntity<String> updateChatEntity(@PathVariable String id, @RequestBody ChatEntity updatedChatEntity) {
 		String response = chatService.updateUser(id, updatedChatEntity);
 		return ResponseEntity.ok(response);
 	}
+
+	@PostMapping("/Verificationlink-send")
+	public ResponseEntity<Map<String, Object>> registerUser(@RequestBody ChatEntity user) {
+	    Map<String, Object> response = new HashMap<>();
+	    ChatEntity registeredUser = chatService.registerUser(user);
+	    if (registeredUser != null) {
+	        response.put("message", "Verification email sent to: " + registeredUser.getEmail());
+	        return ResponseEntity.ok(response);
+	    } else {
+	        response.put("message", "Email does not exist. Please check your email and password.");
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	    }
+	}
+	@GetMapping("/verify-link")
+	public ResponseEntity<?> verifyUser(@RequestParam String token) {
+		boolean verified = chatService.verifyUser(token);
+		if (verified) {
+			return ResponseEntity.ok("Email verified successfully!");
+		}
+		return ResponseEntity.badRequest().body("Invalid or expired token!");
+	}
+
 }
