@@ -103,9 +103,11 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	    return chatMessageRepository.findById(id).map(existingMessage -> {
 	        if (updatedMessage.getUserSearch() != null && !updatedMessage.getUserSearch().isEmpty()) {
 	            List<ChatMessage.UserSearch> mergedUserSearch = new ArrayList<>(existingMessage.getUserSearch());
-	            mergedUserSearch.addAll(updatedMessage.getUserSearch());
-
-	            existingMessage.setUserSearch(mergedUserSearch);
+	            mergedUserSearch.addAll(updatedMessage.getUserSearch()); 
+	            existingMessage.setUserSearch(mergedUserSearch); 
+	        }
+	        if (updatedMessage.getTimestamp() != null) {
+	            existingMessage.setTimestamp(updatedMessage.getTimestamp());  
 	        }
 	        return chatMessageRepository.save(existingMessage);
 	    });

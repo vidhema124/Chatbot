@@ -61,10 +61,12 @@ public class ChatController {
 		return ResponseEntity.ok(response);
 	}
 
+
 	@PostMapping("/Verificationlink-send")
 	public ResponseEntity<Map<String, Object>> registerUser(@RequestBody ChatEntity user) {
 	    Map<String, Object> response = new HashMap<>();
 	    ChatEntity registeredUser = chatService.registerUser(user);
+
 	    if (registeredUser != null) {
 	        response.put("message", "Verification email sent to: " + registeredUser.getEmail());
 	        return ResponseEntity.ok(response);
@@ -73,6 +75,7 @@ public class ChatController {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 	    }
 	}
+
 	@GetMapping("/verify-link")
 	public ResponseEntity<?> verifyUser(@RequestParam String token) {
 		boolean verified = chatService.verifyUser(token);
@@ -81,5 +84,4 @@ public class ChatController {
 		}
 		return ResponseEntity.badRequest().body("Invalid or expired token!");
 	}
-
 }
