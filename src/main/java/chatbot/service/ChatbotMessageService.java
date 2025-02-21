@@ -13,4 +13,5 @@ public interface ChatbotMessageService {
 	String getChatResponse(String userMessage);
 	Optional<ChatMessage> updateById(String id, ChatMessage updatedMessage);
 	ChatMessage saveChatMessage(ChatMessage chatMessage);
+	boolean deleteAll();
 }

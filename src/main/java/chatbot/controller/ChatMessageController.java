@@ -83,4 +83,19 @@ public class ChatMessageController {
 	        ChatMessage savedMessage = chatbotService.saveChatMessage(chatMessage);
 	        return ResponseEntity.ok(savedMessage);
 	    }
+	    
+	    @DeleteMapping("/delete-all")
+	    public ResponseEntity<Map<String, Object>> deleteAllChatMessages() {
+	        boolean deleted = chatbotService.deleteAll();
+
+	        Map<String, Object> response = new HashMap<>();
+	        if (deleted) {
+	            response.put("message", "All chat messages deleted successfully.");
+	            return ResponseEntity.ok(response);
+	        } else {
+	            response.put("message", "No chat messages found to delete.");
+	            return ResponseEntity.status(404).body(response);
+	        }
+	    }
+
 	}

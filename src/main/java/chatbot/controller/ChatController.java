@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -121,4 +122,9 @@ public class ChatController {
 	    Pattern pattern = Pattern.compile(emailRegex);
 	    return pattern.matcher(email).matches();
 	}
+	
+	@DeleteMapping("/user-delete/{id}")
+	public ResponseEntity<Map<String, Object>> deleteChatEntity(@PathVariable String id) {
+	    return chatService.deleteChatEntity(id);
+	}	
 }
