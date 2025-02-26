@@ -17,7 +17,8 @@ public class ChatMessage {
 
     @Id
     private String id;
-    private List<UserSearch> userSearch; // Rename messages to userSearch
+    private String userId;  // Unique User ID
+    private List<UserSearch> userSearch;
     private LocalDateTime timestamp = LocalDateTime.now();
 
     @Getter
