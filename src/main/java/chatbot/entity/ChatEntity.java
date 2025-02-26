@@ -15,6 +15,7 @@ public class ChatEntity {
     private String email;
     private String password;
     private String image;
+    private String googleId;
     private boolean verified = false;
     private String verificationToken;
     

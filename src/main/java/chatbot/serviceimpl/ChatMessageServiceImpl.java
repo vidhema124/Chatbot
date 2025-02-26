@@ -7,6 +7,8 @@ import chatbot.respository.ChatMessageRepository;
 import chatbot.service.ChatbotMessageService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -94,9 +96,10 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	public Optional<ChatMessage> getById(String id) {
-		return chatMessageRepository.findById(id);
-	}
+	public List<ChatMessage> getByUserId(String userId) {
+        ObjectId objectId = new ObjectId(userId); // Convert String to ObjectId
+        return chatMessageRepository.findByUserId(objectId);
+    }
 
 	@Override
 	public Optional<ChatMessage> updateById(String id, ChatMessage updatedMessage) {
@@ -123,9 +126,10 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	 public ChatMessage saveChatMessage(ChatMessage chatMessage) {
-        return chatMessageRepository.save(chatMessage);
-    }
+	public ChatMessage saveChatMessage(ChatMessage chatMessage) {
+	    return chatMessageRepository.save(chatMessage);
+	}
+
 	@Override
 	public boolean deleteAll() {
 	    if (chatMessageRepository.count() > 0) { 

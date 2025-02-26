@@ -47,11 +47,12 @@ public class ChatMessageController {
 		return ResponseEntity.ok(chatHistory);
 	}
 
-	@GetMapping("/get-By/{id}")
-	public ResponseEntity<ChatMessage> getChatMessageById(@PathVariable String id) {
-		Optional<ChatMessage> chatMessage = chatbotService.getById(id);
-		return chatMessage.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(404).body(null));
-	}
+	 @GetMapping("/get-by-userid/{userId}")
+	    public ResponseEntity<List<ChatMessage>> getChatMessagesByUserId(@PathVariable String userId) {
+	        List<ChatMessage> chatMessages = chatbotService.getByUserId(userId);
+	        return chatMessages.isEmpty() ? ResponseEntity.status(404).body(null) : ResponseEntity.ok(chatMessages);
+	    }
+
 
 	@PutMapping("/update-by/{id}")
 	public ResponseEntity<Map<String, Object>> updateChatMessageById(@PathVariable String id, @RequestBody ChatMessage updatedMessage) {
