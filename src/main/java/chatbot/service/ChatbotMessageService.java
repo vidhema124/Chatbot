@@ -15,4 +15,5 @@ public interface ChatbotMessageService {
 	ChatMessage saveChatMessage(ChatMessage chatMessage);
 	boolean deleteAll();
 	List<ChatMessage> getByUserId(String userId);
+	Optional<ChatMessage> getById(String id);
 }

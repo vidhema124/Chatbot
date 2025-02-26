@@ -138,5 +138,9 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	    }
 	    return false;
 	}
+	@Override
+	public Optional<ChatMessage> getById(String id) {
+		return chatMessageRepository.findById(id);
+	}
 
 }
