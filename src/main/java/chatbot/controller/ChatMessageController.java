@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URLDecoder;
@@ -81,13 +82,20 @@ public class ChatMessageController {
 	    }
 	    
 	    @PostMapping("/create")
-	    public ResponseEntity<ChatMessage> createChatMessage(@RequestBody ChatMessage chatMessage, Principal principal) {
-	        String userId = (principal != null) ? principal.getName() : UUID.randomUUID().toString();
-	        chatMessage.setUserId(userId);
-	        ChatMessage savedMessage = chatbotService.saveChatMessage(chatMessage);
-	        return ResponseEntity.ok(savedMessage);
-	    }
+	    public ResponseEntity<ChatMessage> createChatMessage(@RequestBody ChatMessage chatMessage) {
+	        if (chatMessage.getUserId() != null) {
+	            try {
+	             
+	                chatMessage.setUserId(new ObjectId(chatMessage.getUserId().toString()));
+	            } catch (IllegalArgumentException e) {
+	                return ResponseEntity.badRequest().body(null); 
+	            }
+	        }
 
+	        ChatMessage savedChat = chatbotService.saveChatMessage(chatMessage);
+	        return ResponseEntity.ok(savedChat);
+	    }
+	    
 	    @DeleteMapping("/delete-all")
 	    public ResponseEntity<Map<String, Object>> deleteAllChatMessages() {
 	        boolean deleted = chatbotService.deleteAll();

@@ -123,10 +123,9 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	public ChatMessage saveChatMessage(ChatMessage chatMessage) {
-	    return chatMessageRepository.save(chatMessage);
-	}
-
+	 public ChatMessage saveChatMessage(ChatMessage chatMessage) {
+        return chatMessageRepository.save(chatMessage);
+    }
 	@Override
 	public boolean deleteAll() {
 	    if (chatMessageRepository.count() > 0) { 
