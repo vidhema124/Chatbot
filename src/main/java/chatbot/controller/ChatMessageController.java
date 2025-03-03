@@ -40,7 +40,6 @@ public class ChatMessageController {
 	    return chatbotService.getChatResponse(decodedMessage);
 	}
 
-
 	@GetMapping("/search-history")
 	public ResponseEntity<List<ChatMessage>> historyChake() {
 		List<ChatMessage> chatHistory = chatbotService.getHistory();
@@ -116,5 +115,21 @@ public class ChatMessageController {
 			Optional<ChatMessage> chatMessage = chatbotService.getById(id);
 			return chatMessage.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(404).body(null));
 		}
+	    
+	    @DeleteMapping("/delete-ByUserId/{userId}")
+	    public ResponseEntity<Map<String, Object>> deleteByUserId(@PathVariable String userId) {
+	        boolean deleted = chatbotService.deleteByUserId(userId);
+
+	        Map<String, Object> response = new HashMap<>();
+	        if (deleted) {
+	            response.put("message", "Chat messages deleted successfully for userId " + userId);
+	            return ResponseEntity.ok(response);
+	        } else {
+	            response.put("message", "No chat messages found for userId " + userId);
+	            return ResponseEntity.status(404).body(response);
+	        }
+	    }
+
+
 
 	}

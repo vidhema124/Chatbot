@@ -8,7 +8,6 @@ import chatbot.entity.ChatMessage;
 
 public interface ChatbotMessageService {
 	List<ChatMessage> getHistory();
-//	Optional<ChatMessage> getById(String id);
 	boolean deleteById(String id);
 	String getChatResponse(String userMessage);
 	Optional<ChatMessage> updateById(String id, ChatMessage updatedMessage);
@@ -16,4 +15,5 @@ public interface ChatbotMessageService {
 	boolean deleteAll();
 	List<ChatMessage> getByUserId(String userId);
 	Optional<ChatMessage> getById(String id);
+	boolean deleteByUserId(String userId);
 }

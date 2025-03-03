@@ -19,4 +19,14 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
 
 	    List<ChatMessage> findByUserId(ObjectId userId);
 
+		boolean existsById(ObjectId objectId);
+
+		void deleteById(ObjectId objectId);
+
+		long countByUserId(ObjectId objectId);
+
+		void deleteByUserId(ObjectId objectId);
+
+		
+
 }

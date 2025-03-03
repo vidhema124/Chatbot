@@ -33,60 +33,48 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public String getChatResponse(String userMessage) {
-	    int maxRetries = 3;
-	    int retryDelay = 2000;
+		int maxRetries = 3;
+		int retryDelay = 2000;
 
-	    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-	        try {
-	            HttpHeaders headers = new HttpHeaders();
-	            headers.setContentType(MediaType.APPLICATION_JSON);
+		for (int attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(MediaType.APPLICATION_JSON);
 
-	            String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
-	            HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+				String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
+				HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
-	            ResponseEntity<String> response = restTemplate.exchange(
-	                AI_API_URL + "?key=" + apiKey, 
-	                HttpMethod.POST, 
-	                request, 
-	                String.class
-	            );
+				ResponseEntity<String> response = restTemplate.exchange(AI_API_URL + "?key=" + apiKey, HttpMethod.POST,
+						request, String.class);
 
-	            if (response.getStatusCode() == HttpStatus.OK) {
-	                ObjectMapper objectMapper = new ObjectMapper();
-	                JsonNode jsonNode = objectMapper.readTree(response.getBody());
+				if (response.getStatusCode() == HttpStatus.OK) {
+					ObjectMapper objectMapper = new ObjectMapper();
+					JsonNode jsonNode = objectMapper.readTree(response.getBody());
 
-	                String botResponse = jsonNode.path("candidates")
-	                        .get(0)
-	                        .path("content")
-	                        .path("parts")
-	                        .get(0)
-	                        .path("text")
-	                        .asText();
+					String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0)
+							.path("text").asText();
 
-	                // Correctly building the ChatMessage object
-	                ChatMessage chatMessage = ChatMessage.builder()
-	                        .userSearch(List.of(
-	                                ChatMessage.UserSearch.builder()
-	                                        .userMessage(userMessage)
-	                                        .botResponse(botResponse)
-	                                        .build()))
-	                        .build();
+					// Correctly building the ChatMessage object
+					ChatMessage chatMessage = ChatMessage.builder().userSearch(List.of(
+							ChatMessage.UserSearch.builder().userMessage(userMessage).botResponse(botResponse).build()))
+							.build();
 
 //	                chatMessageRepository.save(chatMessage);
-	                return botResponse;
-	            }
-	        } catch (Exception e) {
-	            if (attempt < maxRetries) {
-	                try {
-	                    TimeUnit.MILLISECONDS.sleep(retryDelay);
-	                    retryDelay *= 2;
-	                } catch (InterruptedException ignored) {}
-	            } else {
-	                return "Sorry, I am currently unavailable. Please try again later.";
-	            }
-	        }
-	    }
-	    return "Failed to fetch response from AI.";
+					return botResponse;
+				}
+			} catch (Exception e) {
+				if (attempt < maxRetries) {
+					try {
+						TimeUnit.MILLISECONDS.sleep(retryDelay);
+						retryDelay *= 2;
+					} catch (InterruptedException ignored) {
+					}
+				} else {
+					return "Sorry, I am currently unavailable. Please try again later.";
+				}
+			}
+		}
+		return "Failed to fetch response from AI.";
 	}
 
 	@Override
@@ -97,24 +85,22 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public List<ChatMessage> getByUserId(String userId) {
-        ObjectId objectId = new ObjectId(userId); // Convert String to ObjectId
-        return chatMessageRepository.findByUserId(objectId);
-    }
+		ObjectId objectId = new ObjectId(userId); // Convert String to ObjectId
+		return chatMessageRepository.findByUserId(objectId);
+	}
 
 	@Override
 	public Optional<ChatMessage> updateById(String id, ChatMessage updatedMessage) {
-	    return chatMessageRepository.findById(id).map(existingMessage -> {
-	        if (updatedMessage.getUserSearch() != null && !updatedMessage.getUserSearch().isEmpty()) {
-	            List<ChatMessage.UserSearch> mergedUserSearch = new ArrayList<>(existingMessage.getUserSearch());
-	            mergedUserSearch.addAll(updatedMessage.getUserSearch());
+		return chatMessageRepository.findById(id).map(existingMessage -> {
+			if (updatedMessage.getUserSearch() != null && !updatedMessage.getUserSearch().isEmpty()) {
+				List<ChatMessage.UserSearch> mergedUserSearch = new ArrayList<>(existingMessage.getUserSearch());
+				mergedUserSearch.addAll(updatedMessage.getUserSearch());
 
-	            existingMessage.setUserSearch(mergedUserSearch);
-	        }
-	        return chatMessageRepository.save(existingMessage);
-	    });
+				existingMessage.setUserSearch(mergedUserSearch);
+			}
+			return chatMessageRepository.save(existingMessage);
+		});
 	}
-
-
 
 	@Override
 	public boolean deleteById(String id) {
@@ -127,20 +113,37 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public ChatMessage saveChatMessage(ChatMessage chatMessage) {
-	    return chatMessageRepository.save(chatMessage);
+		return chatMessageRepository.save(chatMessage);
 	}
 
 	@Override
 	public boolean deleteAll() {
-	    if (chatMessageRepository.count() > 0) { 
-	        chatMessageRepository.deleteAll();
-	        return true;
-	    }
-	    return false;
+		if (chatMessageRepository.count() > 0) {
+			chatMessageRepository.deleteAll();
+			return true;
+		}
+		return false;
 	}
+
 	@Override
 	public Optional<ChatMessage> getById(String id) {
 		return chatMessageRepository.findById(id);
+	}
+
+	@Override
+	public boolean deleteByUserId(String userId) {
+		try {
+			ObjectId objectId = new ObjectId(userId);
+			long count = chatMessageRepository.countByUserId(objectId);
+
+			if (count > 0) {
+				chatMessageRepository.deleteByUserId(objectId);
+				return true;
+			}
+		} catch (IllegalArgumentException e) {
+			System.out.println("Invalid ObjectId format: " + userId);
+		}
+		return false;
 	}
 
 }
