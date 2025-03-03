@@ -46,43 +46,102 @@ public class ChatServiceIMPL implements ChatService {
 //	        return "User registered successfully!";
 //	    }
 //	
+	
+	
+	 @Override
+	    public Map<String, Object> login(String email, String password) {
+	        Optional<ChatEntity> user = chatRepository.findByEmail(email);
 
-	@Override
-	public Map<String, Object> login(String email, String password) {
-	    Optional<ChatEntity> user = chatRepository.findByEmail(email);
+	        if (user.isPresent()) {
+	            ChatEntity userData = user.get();
 
-	    if (user.isPresent()) {
-	        ChatEntity userData = user.get();
-	        if (passwordEncoder.matches(password, userData.getPassword())) {
-	            if (userData.isVerified()) {
-	                SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-	                String token = Jwts.builder().setSubject(email).setIssuedAt(new Date())
-	                        .setExpiration(new Date(System.currentTimeMillis() + 3600000))
-	                        .signWith(key, SignatureAlgorithm.HS256).compact();
+	            if (userData.isGoogleLogin()) {
+	                return generateLoginResponse(userData);
+	            }
 
-	                Map<String, Object> response = new HashMap<>();
-	                response.put("message", "Login successfully");
-	                response.put("status", 200);
-	                response.put("token", token);
-	                response.put("id", userData.getId());  // Added user ID
-	                response.put("name", userData.getName());
-	                response.put("email", userData.getEmail());
-	                response.put("image", userData.getImage());
-
-	                return response;
-	            } else {
-	                Map<String, Object> errorResponse = new HashMap<>();
-	                errorResponse.put("message", "Please check your email and verify your email address.");
-	                errorResponse.put("status", 400);
-	                return errorResponse;
+	            if (!userData.isGoogleLogin()) {
+	                if (password == null || password.trim().isEmpty()) {
+	                    return createErrorResponse("Please Signup First......");
+	                }
+	                if (passwordEncoder.matches(password, userData.getPassword())) {
+	                    if (userData.isVerified()) {
+	                        return generateLoginResponse(userData);
+	                    } else {
+	                        return createErrorResponse("Please check your email and verify your email address.");
+	                    }
+	                }
 	            }
 	        }
+
+	        return createErrorResponse("Email or Password is incorrect.");
 	    }
-	    Map<String, Object> errorResponse = new HashMap<>();
-	    errorResponse.put("message", "Email or Password is incorrect.");
-	    errorResponse.put("status", 400);
-	    return errorResponse;
-	}
+
+	    private Map<String, Object> generateLoginResponse(ChatEntity userData) {
+	        SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+	        String token = Jwts.builder()
+	                .setSubject(userData.getEmail())
+	                .setIssuedAt(new Date())
+	                .setExpiration(new Date(System.currentTimeMillis() + 3600000))
+	                .signWith(key, SignatureAlgorithm.HS256)
+	                .compact();
+
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("message", "Login successfully");
+	        response.put("status", 200);
+	        response.put("token", token);
+	        response.put("id", userData.getId());
+	        response.put("name", userData.getName());
+	        response.put("email", userData.getEmail());
+	        response.put("image", userData.getImage());
+
+	        return response;
+	    }
+	    private Map<String, Object> createErrorResponse(String message) {
+	        Map<String, Object> errorResponse = new HashMap<>();
+	        errorResponse.put("message", message);
+	        errorResponse.put("status", 400);
+	        return errorResponse;
+	    }
+	
+	
+	
+
+//	@Override
+//	public Map<String, Object> login(String email, String password) {
+//	    Optional<ChatEntity> user = chatRepository.findByEmail(email);
+//
+//	    if (user.isPresent()) {
+//	        ChatEntity userData = user.get();
+//	        if (passwordEncoder.matches(password, userData.getPassword())) {
+//	            if (userData.isVerified()) {
+//	                SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+//	                String token = Jwts.builder().setSubject(email).setIssuedAt(new Date())
+//	                        .setExpiration(new Date(System.currentTimeMillis() + 3600000))
+//	                        .signWith(key, SignatureAlgorithm.HS256).compact();
+//
+//	                Map<String, Object> response = new HashMap<>();
+//	                response.put("message", "Login successfully");
+//	                response.put("status", 200);
+//	                response.put("token", token);
+//	                response.put("id", userData.getId());  // Added user ID
+//	                response.put("name", userData.getName());
+//	                response.put("email", userData.getEmail());
+//	                response.put("image", userData.getImage());
+//
+//	                return response;
+//	            } else {
+//	                Map<String, Object> errorResponse = new HashMap<>();
+//	                errorResponse.put("message", "Please check your email and verify your email address.");
+//	                errorResponse.put("status", 400);
+//	                return errorResponse;
+//	            }
+//	        }
+//	    }
+//	    Map<String, Object> errorResponse = new HashMap<>();
+//	    errorResponse.put("message", "Email or Password is incorrect.");
+//	    errorResponse.put("status", 400);
+//	    return errorResponse;
+//	}
 
 
 	@Override
@@ -272,4 +331,6 @@ public class ChatServiceIMPL implements ChatService {
 	        response.put("user", savedUser);
 	        return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	    }
+	
+
 }
