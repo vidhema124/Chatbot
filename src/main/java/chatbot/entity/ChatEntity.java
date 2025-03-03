@@ -18,5 +18,6 @@ public class ChatEntity {
     private String googleId;
     private boolean verified = false;
     private String verificationToken;
-    
+    private String authToken; 
+    private boolean googleVerification;
 }

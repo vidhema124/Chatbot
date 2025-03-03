@@ -26,7 +26,9 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
 		long countByUserId(ObjectId objectId);
 
 		void deleteByUserId(ObjectId objectId);
-
+		
+		
+		
 		
 
 }

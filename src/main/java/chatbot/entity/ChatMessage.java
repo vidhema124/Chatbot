@@ -18,10 +18,10 @@ public class ChatMessage {
 
     @Id
     private String id;
-    private ObjectId userId;  // Change from String to ObjectId
+    private ObjectId userId; 
     private List<UserSearch> userSearch;
     private LocalDateTime timestamp = LocalDateTime.now();
-
+     
     @Getter
     @Setter
     @NoArgsConstructor
@@ -31,6 +31,4 @@ public class ChatMessage {
         private String userMessage;
         private String botResponse;
     }
-
-	
 }

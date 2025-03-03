@@ -12,7 +12,7 @@ public interface ChatService {
     public String updateUser(String id, ChatEntity updatedChatEntity);
     ChatEntity registerUser(ChatEntity user);
     boolean verifyUser(String token);
-//	ChatEntity registerUser(ChatEntity chatEntity);
+
 	ResponseEntity<Map<String, Object>> deleteChatEntity(String id);
 
 }
