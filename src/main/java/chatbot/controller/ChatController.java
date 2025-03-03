@@ -51,25 +51,22 @@ public class ChatController {
 //	    return pattern.matcher(email).matches();
 //	}
 
-	
 	@PostMapping("/login")
 	public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> requestBody) {
-	    String email = requestBody.get("email");
-	    String password = requestBody.get("password");
-	    Map<String, Object> response = chatService.login(email, password);
-	    if (response.containsKey("status") && (int) response.get("status") == 400) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-	    }
-	    return ResponseEntity.ok(response);
+		String email = requestBody.get("email");
+		String password = requestBody.get("password");
+		Map<String, Object> response = chatService.login(email, password);
+		if (response.containsKey("status") && (int) response.get("status") == 400) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+		}
+		return ResponseEntity.ok(response);
 	}
-
 
 	@PutMapping("/update/{id}")
 	public ResponseEntity<String> updateChatEntity(@PathVariable String id, @RequestBody ChatEntity updatedChatEntity) {
 		String response = chatService.updateUser(id, updatedChatEntity);
 		return ResponseEntity.ok(response);
 	}
-
 
 //	@PostMapping("/Verificationlink-send")
 //	public ResponseEntity<Map<String, Object>> registerUser(@RequestBody ChatEntity user) {
@@ -93,38 +90,47 @@ public class ChatController {
 		}
 		return ResponseEntity.badRequest().body("Invalid or expired token!");
 	}
-	
+
 	@PostMapping("/signup-verification")
 	public ResponseEntity<Map<String, Object>> signUp(@RequestBody ChatEntity chatEntity) {
-	    Map<String, Object> response = new HashMap<>();
+		Map<String, Object> response = new HashMap<>();
 
-	    if (!isValidEmail(chatEntity.getEmail())) {
-	        response.put("message", "Invalid email format. Please check your email format.");
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-	    }
-	    String responseMessage = chatService.signUp(chatEntity);
-	    if ("Email already exists!".equals(responseMessage)) {
-	        response.put("message", "Email already exists!");
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-	    }
-	    ChatEntity registeredUser = chatService.registerUser(chatEntity);
-	    if (registeredUser != null) {
-	        response.put("message", "User registered successfully! Verification email sent.");
-	        return ResponseEntity.ok(response);
-	    } else {
-	        response.put("message", "Error sending verification email.");
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	    }
+		if (!isValidEmail(chatEntity.getEmail())) {
+			response.put("message", "Invalid email format. Please check your email format.");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+		}
+		String responseMessage = chatService.signUp(chatEntity);
+		if ("Email already exists!".equals(responseMessage)) {
+			response.put("message", "Email already exists!");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+		}
+		ChatEntity registeredUser = chatService.registerUser(chatEntity);
+		if (registeredUser != null) {
+			response.put("message", "User registered successfully! Verification email sent.");
+			return ResponseEntity.ok(response);
+		} else {
+			response.put("message", "Error sending verification email.");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
 	}
 
 	private boolean isValidEmail(String email) {
-	    String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-	    Pattern pattern = Pattern.compile(emailRegex);
-	    return pattern.matcher(email).matches();
+		String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+		Pattern pattern = Pattern.compile(emailRegex);
+		return pattern.matcher(email).matches();
 	}
-	
+
 	@DeleteMapping("/user-delete/{id}")
 	public ResponseEntity<Map<String, Object>> deleteChatEntity(@PathVariable String id) {
-	    return chatService.deleteChatEntity(id);
-	}	
+		return chatService.deleteChatEntity(id);
+	}
+
+	@GetMapping("/user-by-email")
+	public ResponseEntity<Map<String, Object>> getUserByEmail(@RequestParam String email) {
+		return chatService.getUserByEmail(email);
+	}
+	 @PostMapping("/create-user")
+	    public ResponseEntity<Map<String, Object>> createUser(@RequestBody ChatEntity chatEntity) {
+	        return chatService.createUser(chatEntity);
+	    }
 }

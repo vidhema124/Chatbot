@@ -14,5 +14,7 @@ public interface ChatService {
     boolean verifyUser(String token);
 
 	ResponseEntity<Map<String, Object>> deleteChatEntity(String id);
+	ResponseEntity<Map<String, Object>> getUserByEmail(String email);
+	ResponseEntity<Map<String, Object>> createUser(ChatEntity chatEntity);
 
 }

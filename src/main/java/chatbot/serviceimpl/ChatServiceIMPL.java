@@ -243,5 +243,33 @@ public class ChatServiceIMPL implements ChatService {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 	    }
 	}
+	  @Override
+	    public ResponseEntity<Map<String, Object>> getUserByEmail(String email) {
+	        Map<String, Object> response = new HashMap<>();
+	        Optional<ChatEntity> user = chatRepository.findByEmail(email);
 
+	        if (user.isPresent()) {
+	            response.put("status", "success");
+	            response.put("user", user.get());
+	            return ResponseEntity.ok(response);
+	        } else {
+	            response.put("status", "error");
+	            response.put("message", "User not found with email: " + email);
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	        }
+	    }
+	  @Override
+	    public ResponseEntity<Map<String, Object>> createUser(ChatEntity chatEntity) {
+	        Map<String, Object> response = new HashMap<>();
+	        if (chatRepository.findByEmail(chatEntity.getEmail()).isPresent()) {
+	            response.put("status", "error");
+	            response.put("message", "Email already registered.");
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	        }
+	        ChatEntity savedUser = chatRepository.save(chatEntity);
+	        response.put("status", "success");
+	        response.put("message", "User created successfully.");
+	        response.put("user", savedUser);
+	        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	    }
 }
