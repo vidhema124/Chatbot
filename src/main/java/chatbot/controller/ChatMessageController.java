@@ -49,17 +49,19 @@ public class ChatMessageController {
 	}
 
 	@GetMapping("/get-by-userid/{userId}")
-	public ResponseEntity<Map<String, String>> getChatMessagesByUserId(@PathVariable String userId) {
+	public ResponseEntity<Map<String, Object>> getChatMessagesByUserId(@PathVariable String userId) {
 	    List<ChatMessage> chatMessages = chatbotService.getByUserId(userId);
+
 	    if (chatMessages.isEmpty()) {
-	        Map<String, String> response = new HashMap<>();
-	        response.put("message", "User ID does not exist");
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("message", "No chats found for this user");
+	        return ResponseEntity.ok(response); // Status 200
 	    }
-	    return ResponseEntity.ok().body(Map.of("chatMessages", chatMessages.toString()));
+
+	    return ResponseEntity.ok(Map.of("chatMessages", chatMessages));
 	}
 
-	
+
 
 	@PutMapping("/update-by/{id}")
 	public ResponseEntity<Map<String, Object>> updateChatMessageById(@PathVariable String id, @RequestBody ChatMessage updatedMessage) {
