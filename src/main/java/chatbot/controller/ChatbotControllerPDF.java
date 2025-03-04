@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
 @RestController
+@CrossOrigin(origins = {"http://localhost:3000", "https://vchatai.netlify.app"})
 @RequestMapping("/chatbot")
 public class ChatbotControllerPDF {
 	private final RestTemplate restTemplate = new RestTemplate();

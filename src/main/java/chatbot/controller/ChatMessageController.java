@@ -23,7 +23,7 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/chatbot")
 @AllArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "https://vchatai.netlify.app"})
 public class ChatMessageController {
 
 	 ChatbotMessageService chatbotService;
@@ -60,7 +60,6 @@ public class ChatMessageController {
 
 	    return ResponseEntity.ok(Map.of("chatMessages", chatMessages));
 	}
-
 
 
 	@PutMapping("/update-by/{id}")

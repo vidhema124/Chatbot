@@ -22,7 +22,7 @@ import lombok.AllArgsConstructor;
 
 @RestController
 @AllArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "https://vchatai.netlify.app"})
 //@RequestMapping("/api")
 public class ChatController {
 	ChatService chatService;
