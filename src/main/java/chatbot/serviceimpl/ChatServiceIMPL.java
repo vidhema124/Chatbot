@@ -318,19 +318,22 @@ public class ChatServiceIMPL implements ChatService {
 	        }
 	    }
 	  @Override
-	    public ResponseEntity<Map<String, Object>> createUser(ChatEntity chatEntity) {
-	        Map<String, Object> response = new HashMap<>();
-	        if (chatRepository.findByEmail(chatEntity.getEmail()).isPresent()) {
-	            response.put("status", "error");
-	            response.put("message", "Email already registered.");
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-	        }
-	        ChatEntity savedUser = chatRepository.save(chatEntity);
-	        response.put("status", "success");
-	        response.put("message", "User created successfully.");
-	        response.put("user", savedUser);
-	        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-	    }
-	
+	  public ResponseEntity<Map<String, Object>> createUser(ChatEntity chatEntity) {
+	      Map<String, Object> response = new HashMap<>();
+	      
+	      if (chatRepository.findByEmail(chatEntity.getEmail()).isPresent()) {
+	          response.put("status", "error");
+	          response.put("message", "Email already registered.");
+	          return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	      }
+	      
+	      ChatEntity savedUser = chatRepository.save(chatEntity);
+	      
+	      response.put("status", "success");
+	      response.put("message", "User created successfully.");
+	      response.put("id", savedUser.getId()); // Include the user ID
+	      response.put("user", savedUser);
 
+	      return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	  }
 }
