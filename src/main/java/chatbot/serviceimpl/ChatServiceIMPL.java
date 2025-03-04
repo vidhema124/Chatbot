@@ -331,9 +331,8 @@ public class ChatServiceIMPL implements ChatService {
 	      
 	      response.put("status", "success");
 	      response.put("message", "User created successfully.");
-	      response.put("id", savedUser.getId()); // Include the user ID
+	      response.put("id", savedUser.getId());
 	      response.put("user", savedUser);
-
 	      return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	  }
 }

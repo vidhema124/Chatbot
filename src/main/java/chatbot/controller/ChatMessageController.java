@@ -2,6 +2,7 @@ package chatbot.controller;
 
 import chatbot.entity.ChatMessage;
 import chatbot.service.ChatbotMessageService;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.bson.types.ObjectId;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URLDecoder;
@@ -20,11 +22,11 @@ import java.security.Principal;
 
 @RestController
 @RequestMapping("/chatbot")
-@RequiredArgsConstructor
+@AllArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 public class ChatMessageController {
 
-	private final ChatbotMessageService chatbotService;
+	 ChatbotMessageService chatbotService;
 
 //	@GetMapping("/search")
 //	public String chat(@RequestParam String message) {
@@ -46,11 +48,17 @@ public class ChatMessageController {
 		return ResponseEntity.ok(chatHistory);
 	}
 
-	 @GetMapping("/get-by-userid/{userId}")
-	    public ResponseEntity<List<ChatMessage>> getChatMessagesByUserId(@PathVariable String userId) {
-	        List<ChatMessage> chatMessages = chatbotService.getByUserId(userId);
-	        return chatMessages.isEmpty() ? ResponseEntity.status(404).body(null) : ResponseEntity.ok(chatMessages);
+	@GetMapping("/get-by-userid/{userId}")
+	public ResponseEntity<Map<String, String>> getChatMessagesByUserId(@PathVariable String userId) {
+	    List<ChatMessage> chatMessages = chatbotService.getByUserId(userId);
+	    if (chatMessages.isEmpty()) {
+	        Map<String, String> response = new HashMap<>();
+	        response.put("message", "User ID does not exist");
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 	    }
+	    return ResponseEntity.ok().body(Map.of("chatMessages", chatMessages.toString()));
+	}
+
 	
 
 	@PutMapping("/update-by/{id}")
@@ -91,7 +99,6 @@ public class ChatMessageController {
 	                return ResponseEntity.badRequest().body(null); 
 	            }
 	        }
-
 	        ChatMessage savedChat = chatbotService.saveChatMessage(chatMessage);
 	        return ResponseEntity.ok(savedChat);
 	    }
