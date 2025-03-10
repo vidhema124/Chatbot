@@ -20,6 +20,7 @@ public class ChatMessage {
     private String id;
     private ObjectId userId; 
     private List<UserSearch> userSearch;
+    private String type;
     private LocalDateTime timestamp = LocalDateTime.now();
      
     @Getter
