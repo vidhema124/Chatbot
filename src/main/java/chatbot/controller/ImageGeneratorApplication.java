@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import java.util.*;
 
+
 @SpringBootApplication
 @RestController
 @RequestMapping("/huggingface")
