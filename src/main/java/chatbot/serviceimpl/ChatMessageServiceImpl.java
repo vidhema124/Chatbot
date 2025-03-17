@@ -29,12 +29,13 @@ import chatbot.service.ChatbotMessageService;
 import lombok.AllArgsConstructor;
 
 @Service
+@AllArgsConstructor
 public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	 private final ChatMessageRepository chatMessageRepository;
 	    private final RestTemplate restTemplate;
 
-	   
+	    @Autowired
 	    public ChatMessageServiceImpl(ChatMessageRepository chatMessageRepository, RestTemplate restTemplate) {
 	        this.chatMessageRepository = chatMessageRepository;
 	        this.restTemplate = restTemplate;
