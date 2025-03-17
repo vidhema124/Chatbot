@@ -11,8 +11,6 @@ import java.util.List;
 @Document(collection = "chat_messages")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class ChatMessage {
 
@@ -24,8 +22,6 @@ public class ChatMessage {
      
     @Getter
     @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
     @Builder
     public static class UserSearch {
         private String userMessage;

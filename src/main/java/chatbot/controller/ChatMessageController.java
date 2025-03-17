@@ -1,23 +1,25 @@
 package chatbot.controller;
 
-import chatbot.entity.ChatMessage;
-import chatbot.service.ChatbotMessageService;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.bson.types.ObjectId;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.security.Principal;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import chatbot.entity.ChatMessage;
+import chatbot.service.ChatbotMessageService;
+import lombok.AllArgsConstructor;
 
 
 @RestController
@@ -27,20 +29,6 @@ import java.security.Principal;
 public class ChatMessageController {
 
 	 ChatbotMessageService chatbotService;
-
-//	@GetMapping("/search")
-//	public String chat(@RequestParam String message) {
-//		return chatbotService.getChatResponse(message);
-//	}
-	
-	@GetMapping("/search")
-	public String chat(@RequestParam String message) {
-	    // URL-decode the message parameter
-	    String decodedMessage = URLDecoder.decode(message, StandardCharsets.UTF_8);
-	    
-	    // Now, pass the decoded message to the chatbotService
-	    return chatbotService.getChatResponse(decodedMessage);
-	}
 
 	@GetMapping("/search-history")
 	public ResponseEntity<List<ChatMessage>> historyChake() {
