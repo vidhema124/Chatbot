@@ -76,7 +76,7 @@ public class ChatMessageController {
 					.timestamp(LocalDateTime.now()).build();
 
 			// Save chat message
-			chatMessageRepository.save(chatMessage);
+			//chatMessageRepository.save(chatMessage);
 
 			// Return response
 			Map<String, Object> response = new HashMap<>();
