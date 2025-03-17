@@ -2,7 +2,6 @@ package chatbot.serviceimpl;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -144,39 +143,40 @@ public class ChatServiceIMPL implements ChatService {
 //	}
 
 
-	@Override
-	public String updateUser(String id, ChatEntity updatedChatEntity) {
-		Optional<ChatEntity> existingUserOptional = chatRepository.findById(id);
+//	@Override
+//	public String updateUser(String id, ChatEntity updatedChatEntity) {
+//		Optional<ChatEntity> existingUserOptional = chatRepository.findById(id);
+//
+//		if (!existingUserOptional.isPresent()) {
+//			return "User not found!";
+//		}
+//
+//		ChatEntity existingUser = existingUserOptional.get();
+//
+//		if (!existingUser.getEmail().equals(updatedChatEntity.getEmail())) {
+//			Optional<ChatEntity> emailCheck = chatRepository.findByEmail(updatedChatEntity.getEmail());
+//			if (emailCheck.isPresent()) {
+//				return "Email is already taken!";
+//			}
+//			existingUser.setEmail(updatedChatEntity.getEmail());
+//		}
+//
+//		existingUser.setName(updatedChatEntity.getName());
+//
+//		if (updatedChatEntity.getPassword() != null && !updatedChatEntity.getPassword().isEmpty()) {
+//			String encryptedPassword = passwordEncoder.encode(updatedChatEntity.getPassword());
+//			existingUser.setPassword(encryptedPassword);
+//		}
+//
+//		if (updatedChatEntity.getImage() != null && !updatedChatEntity.getImage().isEmpty()) {
+//			existingUser.setImage(updatedChatEntity.getImage());
+//		}
+//
+//		chatRepository.save(existingUser);
+//		return "User updated successfully!";
+//	}
 
-		if (!existingUserOptional.isPresent()) {
-			return "User not found!";
-		}
-
-		ChatEntity existingUser = existingUserOptional.get();
-
-		if (!existingUser.getEmail().equals(updatedChatEntity.getEmail())) {
-			Optional<ChatEntity> emailCheck = chatRepository.findByEmail(updatedChatEntity.getEmail());
-			if (emailCheck.isPresent()) {
-				return "Email is already taken!";
-			}
-			existingUser.setEmail(updatedChatEntity.getEmail());
-		}
-
-		existingUser.setName(updatedChatEntity.getName());
-
-		if (updatedChatEntity.getPassword() != null && !updatedChatEntity.getPassword().isEmpty()) {
-			String encryptedPassword = passwordEncoder.encode(updatedChatEntity.getPassword());
-			existingUser.setPassword(encryptedPassword);
-		}
-
-		if (updatedChatEntity.getImage() != null && !updatedChatEntity.getImage().isEmpty()) {
-			existingUser.setImage(updatedChatEntity.getImage());
-		}
-
-		chatRepository.save(existingUser);
-		return "User updated successfully!";
-	}
-
+	    
 //	@Autowired
 //	private JavaMailSender mailSender;
 //
@@ -335,4 +335,16 @@ public class ChatServiceIMPL implements ChatService {
 	      response.put("user", savedUser);
 	      return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	  }
+
+	@Override
+	public Optional<ChatEntity> findById(String id) {
+		Optional<ChatEntity> response=chatRepository.findById(id);
+		return response;
+	}
+
+	@Override
+	public ChatEntity chatUpdate(ChatEntity chatEntity) {
+		return chatRepository.save(chatEntity);
+	}
+
 }
