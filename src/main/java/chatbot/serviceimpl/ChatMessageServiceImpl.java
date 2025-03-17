@@ -29,17 +29,17 @@ import chatbot.service.ChatbotMessageService;
 import lombok.AllArgsConstructor;
 
 @Service
+
 public class ChatMessageServiceImpl implements ChatbotMessageService {
 
-    private ChatMessageRepository chatMessageRepository;
+	 private final ChatMessageRepository chatMessageRepository;
+	    private final RestTemplate restTemplate;
 
-    private RestTemplate restTemplate;
-
-    @Autowired
-    public ChatMessageServiceImpl(ChatMessageRepository chatMessageRepository, RestTemplate restTemplate) {
-        this.chatMessageRepository = chatMessageRepository;
-        this.restTemplate = restTemplate;
-    }
+	   
+	    public ChatMessageServiceImpl(ChatMessageRepository chatMessageRepository, RestTemplate restTemplate) {
+	        this.chatMessageRepository = chatMessageRepository;
+	        this.restTemplate = restTemplate;
+	    }
     
 	@Value("${openai.api.key}")
 	private String openaiapiKey;

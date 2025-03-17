@@ -28,7 +28,7 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
 
 	Optional<ChatMessage> findById(ObjectId id);
 
-	ChatMessage save(ChatMessage user);
+//	ChatMessage save(ChatMessage user);
 
 	Optional<ChatMessage> findById(String id);
 
