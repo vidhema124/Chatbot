@@ -29,7 +29,6 @@ import chatbot.service.ChatbotMessageService;
 import lombok.AllArgsConstructor;
 
 @Service
-
 public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	 private final ChatMessageRepository chatMessageRepository;
@@ -43,6 +42,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
     
 	@Value("${openai.api.key}")
 	private String openaiapiKey;
+	
 	private final String apiUrl = "https://api.openai.com/v1/chat/completions";
 
 	@Value("${huggingface.api.key}")
