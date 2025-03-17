@@ -1,7 +1,11 @@
 package chatbot.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import org.bson.types.ObjectId;
+import org.springframework.http.ResponseEntity;
 
 import chatbot.entity.ChatMessage;
 
@@ -16,5 +20,8 @@ public interface ChatbotMessageService {
 	Optional<ChatMessage> getById(String id);
 	boolean deleteByUserId(String userId);
 	String getChatResponse(String userMessage);
+	
+	ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String decodedMessage);
+	String getImageResponse(String prompt);
 	
 }

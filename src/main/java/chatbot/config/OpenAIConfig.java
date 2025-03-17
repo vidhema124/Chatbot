@@ -11,5 +11,6 @@ import lombok.Setter;
 @Setter
 public class OpenAIConfig {
     private String key;
-    private String url;
+    private String chatUrl;  // Chat API URL
+    private String imageUrl; // Image API URL
 }
