@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -25,14 +26,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import chatbot.entity.ChatMessage;
 import chatbot.respository.ChatMessageRepository;
 import chatbot.service.ChatbotMessageService;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class ChatMessageServiceImpl implements ChatbotMessageService {
 
-	private final RestTemplate restTemplate;
-	private final ChatMessageRepository chatMessageRepository;
+	@Autowired
+	 RestTemplate restTemplate;
+	 ChatMessageRepository chatMessageRepository;
 
 	@Value("${openai.api.key}")
 	private String openaiapiKey;
@@ -42,8 +43,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	private String huggingfaceapiKey;
 	private final String apiUrll = "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4";
 
-	@Value("${openai.api.key}")
-	private String openaiimagesapiKeys;
+	
 	private final String apiUrls = "https://api.openai.com/v1/images/generations";
 
 	@Value("${chatbot.api.key}")
@@ -192,7 +192,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	public ResponseEntity<Map<String, Object>> chatWithGPT(String message, String userId) {
+	public ResponseEntity<?> chatWithGPT(String message, String userId) {
 
 		Optional<ChatMessage> userOptional = chatMessageRepository.findById(userId);
 		if (userOptional.isEmpty()) {
@@ -246,7 +246,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	public ResponseEntity<Map<String, Object>> generateImage(String prompt, String userId) {
+	public ResponseEntity<?> generateImage(String prompt, String userId) {
 
 		Optional<ChatMessage> userOpt = chatMessageRepository.findById(userId);
 		if (userOpt.isEmpty()) {
@@ -267,7 +267,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.setBearerAuth(openaiimagesapiKeys);
+		headers.setBearerAuth(openaiapiKey);
 
 		Map<String, Object> requestBody = new HashMap<>();
 		requestBody.put("model", "dall-e-3");
