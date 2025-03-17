@@ -1,11 +1,14 @@
 package chatbot.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,20 +18,74 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import chatbot.entity.ChatMessage;
+import chatbot.respository.ChatMessageRepository;
 import chatbot.service.ChatbotMessageService;
 import lombok.AllArgsConstructor;
-
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/chatbot")
-@AllArgsConstructor
 @CrossOrigin(origins = {"http://localhost:3000", "https://vchatai.netlify.app"})
 public class ChatMessageController {
 
-	 ChatbotMessageService chatbotService;
+    private final ChatbotMessageService chatbotService;
+    private final ChatMessageRepository chatMessageRepository;
+
+    
+    @Autowired
+    public ChatMessageController(ChatbotMessageService chatbotService, ChatMessageRepository chatMessageRepository) {
+        this.chatbotService = chatbotService;
+        this.chatMessageRepository = chatMessageRepository;
+    }
+
+    @PostMapping("/send")
+    public ResponseEntity<?> sendMessage(
+            @RequestParam String userId,
+            @RequestParam String message) {
+
+        Optional<ChatMessage> userOptional = chatMessageRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        ChatMessage user = userOptional.get();
+
+        
+        if (user.getCredits() < 0.25) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient credits");
+        }
+
+        
+        user.setCredits(user.getCredits() - 0.25);
+        chatMessageRepository.save(user);
+
+       
+        String botResponse = chatbotService.getChatResponse(message);
+
+      
+        ChatMessage chatMessage = ChatMessage.builder()
+                .userId(new ObjectId(userId))
+                .userSearch(List.of(new ChatMessage.UserSearch(message, botResponse)))
+                .credits(user.getCredits()) 
+                .timestamp(LocalDateTime.now()) 
+                .build();
+
+//        chatMessageRepository.save(chatMessage);
+
+        // Return response
+        Map<String, Object> response = new HashMap<>();
+        response.put("userMessage", message);
+        response.put("botResponse", botResponse);
+        response.put("remainingCredits", user.getCredits());
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 	@GetMapping("/search-history")
 	public ResponseEntity<List<ChatMessage>> historyChake() {

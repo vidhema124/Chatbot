@@ -19,9 +19,12 @@ public class ChatMessage {
     private ObjectId userId; 
     private List<UserSearch> userSearch;
     private LocalDateTime timestamp = LocalDateTime.now();
+    private double credits; 
      
     @Getter
     @Setter
+    @AllArgsConstructor  // Ensures parameterized constructor is generated
+    @NoArgsConstructor 
     @Builder
     public static class UserSearch {
         private String userMessage;
