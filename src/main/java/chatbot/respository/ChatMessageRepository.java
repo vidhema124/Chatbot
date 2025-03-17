@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 import chatbot.entity.ChatMessage;
 
 @Repository
-
 public interface ChatMessageRepository extends MongoRepository<ChatMessage, String> {
 
 	@Query("{'userSearch.userMessage': ?0}")

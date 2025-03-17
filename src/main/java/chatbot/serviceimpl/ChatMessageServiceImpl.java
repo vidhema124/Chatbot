@@ -31,10 +31,16 @@ import lombok.AllArgsConstructor;
 @Service
 public class ChatMessageServiceImpl implements ChatbotMessageService {
 
-	@Autowired
-	 RestTemplate restTemplate;
-	 ChatMessageRepository chatMessageRepository;
+    private ChatMessageRepository chatMessageRepository;
 
+    private RestTemplate restTemplate;
+
+    @Autowired
+    public ChatMessageServiceImpl(ChatMessageRepository chatMessageRepository, RestTemplate restTemplate) {
+        this.chatMessageRepository = chatMessageRepository;
+        this.restTemplate = restTemplate;
+    }
+    
 	@Value("${openai.api.key}")
 	private String openaiapiKey;
 	private final String apiUrl = "https://api.openai.com/v1/chat/completions";
@@ -50,8 +56,8 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	private String chatbotapiKey;
 	private static final String AI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
-	@Override
-	public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage) {
+	 @Override
+	    public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage) {
 		Map<String, Object> responseMap = new HashMap<>();
 
 		Optional<ChatMessage> optionalUser = chatMessageRepository.findById(userId);
@@ -192,7 +198,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	public ResponseEntity<?> chatWithGPT(String message, String userId) {
+	public ResponseEntity<Map<String, Object>> chatWithGPT(String message, String userId) {
 
 		Optional<ChatMessage> userOptional = chatMessageRepository.findById(userId);
 		if (userOptional.isEmpty()) {
@@ -246,7 +252,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	public ResponseEntity<?> generateImage(String prompt, String userId) {
+	public ResponseEntity<Map<String, Object>> generateImage(String prompt, String userId) {
 
 		Optional<ChatMessage> userOpt = chatMessageRepository.findById(userId);
 		if (userOpt.isEmpty()) {
