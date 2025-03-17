@@ -14,21 +14,23 @@ import chatbot.entity.ChatMessage;
 
 public interface ChatMessageRepository extends MongoRepository<ChatMessage, String> {
 
-	 @Query("{'userSearch.userMessage': ?0}")
-	    Optional<ChatMessage> findByUserSearch_UserMessage(String userMessage);
+	@Query("{'userSearch.userMessage': ?0}")
+	Optional<ChatMessage> findByUserSearch_UserMessage(String userMessage);
 
-	    List<ChatMessage> findByUserId(ObjectId userId);
+	List<ChatMessage> findByUserId(ObjectId userId);
 
-		boolean existsById(ObjectId objectId);
+	boolean existsById(ObjectId objectId);
 
-		void deleteById(ObjectId objectId);
+	void deleteById(ObjectId objectId);
 
-		long countByUserId(ObjectId objectId);
+	long countByUserId(ObjectId objectId);
 
-		void deleteByUserId(ObjectId objectId);
-		
-		
-		
-		
+	void deleteByUserId(ObjectId objectId);
+
+	Optional<ChatMessage> findById(ObjectId id);
+
+	ChatMessage save(ChatMessage user);
+
+	Optional<ChatMessage> findById(String id);
 
 }

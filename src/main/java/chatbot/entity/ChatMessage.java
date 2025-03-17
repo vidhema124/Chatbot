@@ -16,20 +16,21 @@ import java.util.List;
 @Builder
 public class ChatMessage {
 
-    @Id
-    private String id;
-    private ObjectId userId; 
-    private List<UserSearch> userSearch;
-    private String type;
-    private LocalDateTime timestamp = LocalDateTime.now();
-     
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class UserSearch {
-        private String userMessage;
-        private String botResponse;
-    }
+	@Id
+	private String id;
+	private ObjectId userId;
+	private List<UserSearch> userSearch;
+	private String type;
+	private LocalDateTime timestamp = LocalDateTime.now();
+	private double credits;
+
+	@Getter
+	@Setter
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Builder
+	public static class UserSearch {
+		private String userMessage;
+		private String botResponse;
+	}
 }
