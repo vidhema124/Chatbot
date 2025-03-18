@@ -24,8 +24,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import chatbot.config.GeminiConfig;
 import chatbot.config.OpenAIConfig;
+import chatbot.entity.ChatEntity;
 import chatbot.entity.ChatMessage;
 import chatbot.respository.ChatMessageRepository;
+import chatbot.respository.ChatRepository;
 import chatbot.service.ChatbotMessageService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -38,18 +40,21 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	    private final OpenAIConfig openAIConfig;
 	    private final GeminiConfig geminiConfig;
 	    private final RestTemplate restTemplate;
+	    private final ChatRepository chatRepository;
 
 	    // ✅ Use Constructor Injection
 	    public ChatMessageServiceImpl(
 	        ChatMessageRepository chatMessageRepository,
 	        OpenAIConfig openAIConfig,
 	        GeminiConfig geminiConfig,
-	        RestTemplate restTemplate
+	        RestTemplate restTemplate,
+	        ChatRepository chatRepository
 	    ) {
 	        this.chatMessageRepository = chatMessageRepository;
 	        this.openAIConfig = openAIConfig;
 	        this.geminiConfig = geminiConfig;
 	        this.restTemplate = restTemplate;
+	        this.chatRepository=chatRepository;
 	    }
 	@Override
 	public String getChatResponse(String userMessage) {
@@ -153,65 +158,74 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 		return false;
 	}
 //public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage
-	 @Override
-	 public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage) {
-	        Map<String, Object> responseMap = new HashMap<>();
-	        Optional<ChatMessage> optionalUser = chatMessageRepository.findById(userId);
+	@Override
+	public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage) {
+	    Map<String, Object> responseMap = new HashMap<>();
 
-	        if (optionalUser.isEmpty()) {
-	            responseMap.put("message", "User not found.");
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMap);
-	        }
+	    // Fetch user from ChatEntity instead of ChatMessage
+	    Optional<ChatEntity> optionalUser = chatRepository.findById(userId.toString());
 
-	        ChatMessage user = optionalUser.get();
-	        if (user.getCredits() < 0.25) {
-	            responseMap.put("message", "Insufficient credits. Please top up your balance.");
-	            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(responseMap);
-	        }
+	    if (optionalUser.isEmpty()) {
+	        responseMap.put("message", "User not found.");
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMap);
+	    }
 
-	        user.setCredits(user.getCredits() - 0.25);
-	        chatMessageRepository.save(user);
+	    ChatEntity user = optionalUser.get();
 
-	        int maxRetries = 3;
-	        int retryDelay = 2000;
+	    // Check if user has enough credits
+	    if (user.getCredits() < 0.25) {
+	        responseMap.put("message", "Insufficient credits. Please top up your balance.");
+	        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(responseMap);
+	    }
 
-	        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-	            try {
-	                HttpHeaders headers = new HttpHeaders();
-	                headers.setContentType(MediaType.APPLICATION_JSON);
+	    // Deduct 0.25 credit
+	    user.setCredits(user.getCredits() - 0.25);
+	    chatRepository.save(user);
 
-	                String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
-	                HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+	    int maxRetries = 3;
+	    int retryDelay = 2000;
 
-	                String apiUrl = geminiConfig.getUrl() + "?key=" + geminiConfig.getKey();
-	                ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
+	    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+	        try {
+	            HttpHeaders headers = new HttpHeaders();
+	            headers.setContentType(MediaType.APPLICATION_JSON);
 
-	                if (response.getStatusCode() == HttpStatus.OK) {
-	                    ObjectMapper objectMapper = new ObjectMapper();
-	                    JsonNode jsonNode = objectMapper.readTree(response.getBody());
-	                    String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+	            String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
+	            HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
-	                    responseMap.put("botResponse", botResponse);
-	                    return ResponseEntity.ok(responseMap);
+	            String apiUrl = geminiConfig.getUrl() + "?key=" + geminiConfig.getKey();
+	            ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
+
+	            if (response.getStatusCode() == HttpStatus.OK) {
+	                ObjectMapper objectMapper = new ObjectMapper();
+	                JsonNode jsonNode = objectMapper.readTree(response.getBody());
+	                String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0)
+	                        .path("text").asText();
+
+	                responseMap.put("botResponse", botResponse);
+	                responseMap.put("remainingCredits", user.getCredits());
+	                return ResponseEntity.ok(responseMap);
+	            }
+	        } catch (Exception e) {
+	            if (attempt < maxRetries) {
+	                try {
+	                    TimeUnit.MILLISECONDS.sleep(retryDelay);
+	                    retryDelay *= 2;
+	                } catch (InterruptedException ignored) {
 	                }
-	            } catch (Exception e) {
-	                if (attempt < maxRetries) {
-	                    try {
-	                        TimeUnit.MILLISECONDS.sleep(retryDelay);
-	                        retryDelay *= 2;
-	                    } catch (InterruptedException ignored) {}
-	                } else {
-	                    responseMap.put("status", "error");
-	                    responseMap.put("message", "Sorry, I am currently unavailable. Please try again later.");
-	                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseMap);
-	                }
+	            } else {
+	                responseMap.put("status", "error");
+	                responseMap.put("message", "Sorry, I am currently unavailable. Please try again later.");
+	                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseMap);
 	            }
 	        }
-
-	        responseMap.put("status", "error");
-	        responseMap.put("message", "Failed to fetch response from AI.");
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
 	    }
+
+	    responseMap.put("status", "error");
+	    responseMap.put("message", "Failed to fetch response from AI.");
+	    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
+	}
+
 	@Override
 	public String getImageResponse(String prompt) {
 		try {

@@ -23,8 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import chatbot.entity.ChatEntity;
 import chatbot.entity.ChatMessage;
 import chatbot.respository.ChatMessageRepository;
+import chatbot.respository.ChatRepository;
 import chatbot.service.ChatbotMessageService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -34,65 +36,111 @@ import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = { "http://localhost:3000", "https://vchatai.netlify.app" })
 public class ChatMessageController {
 
+	private final ChatRepository chatRepository;
 	private final ChatbotMessageService chatbotService;
 	private final ChatMessageRepository chatMessageRepository;
 
 	@Autowired
-	public ChatMessageController(ChatbotMessageService chatbotService, ChatMessageRepository chatMessageRepository) {
+	public ChatMessageController(ChatbotMessageService chatbotService, ChatMessageRepository chatMessageRepository ,ChatRepository chatRepository) {
 		this.chatbotService = chatbotService;
 		this.chatMessageRepository = chatMessageRepository;
+		this.chatRepository=chatRepository;
 	}
+
+//	@GetMapping("/openai")
+//	public ResponseEntity<?> sendMessage(@RequestParam String userId, @RequestParam String message) {
+//
+//		try {
+//			// Convert userId from String to ObjectId
+//			ObjectId objectId = new ObjectId(userId);
+//
+//			// Find user by ObjectId
+//			Optional<ChatMessage> userOptional = chatMessageRepository.findById(objectId);
+//			if (userOptional.isEmpty()) {
+//				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+//			}
+//
+//			ChatMessage user = userOptional.get();
+//
+//			// Check if user has enough credits
+//			if (user.getCredits() < 0.25) {
+//				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient credits");
+//			}
+//
+//			// Deduct credits
+//			user.setCredits(user.getCredits() - 0.25);
+//			chatMessageRepository.save(user);
+//
+//			// Get chatbot response
+//			String botResponse = chatbotService.getChatResponse(message);
+//
+//			// Create chat message object
+//			ChatMessage chatMessage = ChatMessage.builder().userId(objectId)
+//					.userSearch(List.of(new ChatMessage.UserSearch(message, botResponse))).credits(user.getCredits())
+//					.timestamp(LocalDateTime.now()).build();
+//
+//			// Save chat message
+//			//chatMessageRepository.save(chatMessage);
+//
+//			// Return response
+//			Map<String, Object> response = new HashMap<>();
+//			response.put("botResponse", botResponse);
+//
+//			return ResponseEntity.ok(response);
+//
+//		} catch (IllegalArgumentException e) {
+//			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format");
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body("An error occurred while processing the request");
+//		}
+//	}
 
 	@GetMapping("/openai")
 	public ResponseEntity<?> sendMessage(@RequestParam String userId, @RequestParam String message) {
+	    try {
+	        // Convert userId from String to ObjectId
+	        ObjectId objectId = new ObjectId(userId);
 
-		try {
-			// Convert userId from String to ObjectId
-			ObjectId objectId = new ObjectId(userId);
+	        // Find user in ChatEntity instead of ChatMessage
+	        Optional<ChatEntity> userOptional = chatRepository.findById(objectId.toString());
+	        if (userOptional.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+	        }
 
-			// Find user by ObjectId
-			Optional<ChatMessage> userOptional = chatMessageRepository.findById(objectId);
-			if (userOptional.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-			}
+	        ChatEntity user = userOptional.get();
 
-			ChatMessage user = userOptional.get();
+	        // Check if user has enough credits
+	        if (user.getCredits() < 0.25) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient credits");
+	        }
 
-			// Check if user has enough credits
-			if (user.getCredits() < 0.25) {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient credits");
-			}
+	        // Deduct credits
+	        user.setCredits(user.getCredits() - 0.25);
+	        chatRepository.save(user);
 
-			// Deduct credits
-			user.setCredits(user.getCredits() - 0.25);
-			chatMessageRepository.save(user);
+	        // Get chatbot response
+	        String botResponse = chatbotService.getChatResponse(message);
 
-			// Get chatbot response
-			String botResponse = chatbotService.getChatResponse(message);
+	        // Create response
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("botResponse", botResponse);
+	        response.put("remainingCredits", user.getCredits());
 
-			// Create chat message object
-			ChatMessage chatMessage = ChatMessage.builder().userId(objectId)
-					.userSearch(List.of(new ChatMessage.UserSearch(message, botResponse))).credits(user.getCredits())
-					.timestamp(LocalDateTime.now()).build();
+	        return ResponseEntity.ok(response);
 
-			// Save chat message
-			//chatMessageRepository.save(chatMessage);
-
-			// Return response
-			Map<String, Object> response = new HashMap<>();
-			response.put("botResponse", botResponse);
-
-			return ResponseEntity.ok(response);
-
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format");
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("An error occurred while processing the request");
-		}
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format");
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("An error occurred while processing the request");
+	    }
 	}
 
+	
+	
 	@GetMapping("/search-history")
 	public ResponseEntity<List<ChatMessage>> historyChake() {
 		List<ChatMessage> chatHistory = chatbotService.getHistory();
@@ -195,52 +243,95 @@ public class ChatMessageController {
         return chatbotService.getChatResponse(userId, decodedMessage);
     }
 
+    @GetMapping("/generate-image")
+    public ResponseEntity<?> generateImage(@RequestParam String userId, @RequestParam String prompt) {
 
-	@GetMapping("/generate-image")
-	public ResponseEntity<?> generateImage(@RequestParam String userId, @RequestParam String prompt) {
+        try {
+            // Convert userId from String to ObjectId
+            ObjectId objectId = new ObjectId(userId);
 
-		try {
-			// Convert userId from String to ObjectId
-			ObjectId objectId = new ObjectId(userId);
+            // Find user in ChatEntity instead of ChatMessage
+            Optional<ChatEntity> userOptional = chatRepository.findById(objectId.toString());
+            if (userOptional.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
 
-			// Find user by ObjectId
-			Optional<ChatMessage> userOptional = chatMessageRepository.findById(objectId);
-			if (userOptional.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-			}
+            ChatEntity user = userOptional.get();
 
-			ChatMessage user = userOptional.get();
+            // Check if user has enough credits (1 credit per image)
+            if (user.getCredits() < 0.25) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient credits");
+            }
 
-			// Check if user has enough credits (1 credit per image)
-			if (user.getCredits() < 0.25) {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient credits");
-			}
+            // Deduct 0.25 credit for image generation
+            user.setCredits(user.getCredits() - 0.25);
+            chatRepository.save(user);
 
-			// Deduct 1 credit for image generation
-			user.setCredits(user.getCredits() - 0.25);
-			chatMessageRepository.save(user);
+            // Generate image using OpenAI API
+            String imageUrl = chatbotService.getImageResponse(prompt);
 
-			// Generate image using OpenAI API
-			String imageUrl = chatbotService.getImageResponse(prompt);
+            // Return image URL and remaining credits
+            Map<String, Object> response = new HashMap<>();
+            response.put("imageUrl", imageUrl);
+            response.put("remainingCredits", user.getCredits());
 
-			// Save image request in database
-			ChatMessage chatMessage = ChatMessage.builder().userId(objectId)
-					.userSearch(List.of(new ChatMessage.UserSearch(prompt, imageUrl))).credits(user.getCredits())
-					.timestamp(LocalDateTime.now()).build();
-//			chatMessageRepository.save(chatMessage);
+            return ResponseEntity.ok(response);
 
-			// Return image URL
-			Map<String, Object> response = new HashMap<>();
-			response.put("imageUrl", imageUrl);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while generating the image");
+        }
+    }
 
-			return ResponseEntity.ok(response);
 
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format");
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("An error occurred while generating the image");
-		}
-	}
+//	@GetMapping("/generate-image")
+//	public ResponseEntity<?> generateImage(@RequestParam String userId, @RequestParam String prompt) {
+//
+//		try {
+//			// Convert userId from String to ObjectId
+//			ObjectId objectId = new ObjectId(userId);
+//
+//			// Find user by ObjectId
+//			Optional<ChatMessage> userOptional = chatMessageRepository.findById(objectId);
+//			if (userOptional.isEmpty()) {
+//				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+//			}
+//
+//			ChatMessage user = userOptional.get();
+//
+//			// Check if user has enough credits (1 credit per image)
+//			if (user.getCredits() < 0.25) {
+//				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient credits");
+//			}
+//
+//			// Deduct 1 credit for image generation
+//			user.setCredits(user.getCredits() - 0.25);
+//			chatMessageRepository.save(user);
+//
+//			// Generate image using OpenAI API
+//			String imageUrl = chatbotService.getImageResponse(prompt);
+//
+//			// Save image request in database
+//			ChatMessage chatMessage = ChatMessage.builder().userId(objectId)
+//					.userSearch(List.of(new ChatMessage.UserSearch(prompt, imageUrl))).credits(user.getCredits())
+//					.timestamp(LocalDateTime.now()).build();
+////			chatMessageRepository.save(chatMessage);
+//
+//			// Return image URL
+//			Map<String, Object> response = new HashMap<>();
+//			response.put("imageUrl", imageUrl);
+//
+//			return ResponseEntity.ok(response);
+//
+//		} catch (IllegalArgumentException e) {
+//			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format");
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body("An error occurred while generating the image");
+//		}
+//	}
 }

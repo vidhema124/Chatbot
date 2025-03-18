@@ -8,5 +8,7 @@ public interface ChatRepository extends MongoRepository<ChatEntity, String> {
     Optional<ChatEntity> findByEmail(String email);
     Optional<ChatEntity> findByVerificationToken(String token);
     
+    Optional<ChatEntity> findById(String id);
+    
     
 }

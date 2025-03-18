@@ -20,4 +20,5 @@ public class ChatEntity {
     private String verificationToken;
     private boolean googleVerification;
     private boolean isGoogleLogin;
+    private double credits;
 }
