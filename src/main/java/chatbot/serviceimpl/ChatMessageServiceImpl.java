@@ -21,12 +21,10 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import chatbot.config.GeminiConfig;
 import chatbot.config.OpenAIConfig;
 import chatbot.entity.ChatMessage;
 import chatbot.respository.ChatMessageRepository;
 import chatbot.service.ChatbotMessageService;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -35,8 +33,13 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	private final ChatMessageRepository chatMessageRepository;
 	private final OpenAIConfig openAIConfig;
-	private final GeminiConfig geminiConfig;
 	private final RestTemplate restTemplate;
+	
+	 @Value("${gemini.api.key}")
+	    private String geminiApiKey;
+
+	    @Value("${gemini.api.url}")
+	    private String geminiApiUrl;
 
 	@Override
 	public String getChatResponse(String userMessage) {
@@ -140,66 +143,27 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 		return false;
 	}
 
-	  @Override
+	 @Override
 	    public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage) {
 	        Map<String, Object> responseMap = new HashMap<>();
-	        Optional<ChatMessage> optionalUser = chatMessageRepository.findById(userId);
+	        
+	        // Example API call
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.APPLICATION_JSON);
+	        
+	        String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
+	        HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+	        
+	        String apiUrl = geminiApiUrl + "?key=" + geminiApiKey;
+	        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
 
-	        if (optionalUser.isEmpty()) {
-	            responseMap.put("message", "User not found.");
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMap);
+	        if (response.getStatusCode() == HttpStatus.OK) {
+	            responseMap.put("botResponse", response.getBody());
+	            return ResponseEntity.ok(responseMap);
+	        } else {
+	            responseMap.put("message", "Failed to fetch response.");
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
 	        }
-
-	        ChatMessage user = optionalUser.get();
-	        if (user.getCredits() < 0.25) {
-	            responseMap.put("message", "Insufficient credits. Please top up your balance.");
-	            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(responseMap);
-	        }
-
-	        user.setCredits(user.getCredits() - 0.25);
-	        chatMessageRepository.save(user);
-
-	        int maxRetries = 3;
-	        int retryDelay = 2000;
-
-	        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-	            try {
-	                HttpHeaders headers = new HttpHeaders();
-	                headers.setContentType(MediaType.APPLICATION_JSON);
-
-	                String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
-	                HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
-
-	                String apiUrl = geminiConfig.getGeminiApiUrl() + "?key=" + geminiConfig.getGeminiApiKey();
-	                ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
-
-	                if (response.getStatusCode() == HttpStatus.OK) {
-	                    ObjectMapper objectMapper = new ObjectMapper();
-	                    JsonNode jsonNode = objectMapper.readTree(response.getBody());
-	                    String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0)
-	                            .path("text").asText();
-
-	                    responseMap.put("botResponse", botResponse);
-	                    return ResponseEntity.ok(responseMap);
-	                }
-	            } catch (Exception e) {
-	                if (attempt < maxRetries) {
-	                    try {
-	                        TimeUnit.MILLISECONDS.sleep(retryDelay);
-	                        retryDelay *= 2;
-	                    } catch (InterruptedException ignored) {
-	                    }
-	                } else {
-	                    responseMap.put("status", "error");
-	                    responseMap.put("message", "Sorry, I am currently unavailable. Please try again later.");
-	                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseMap);
-	                }
-	            }
-	        }
-
-	        responseMap.put("status", "error");
-	        responseMap.put("message", "Failed to fetch response from AI.");
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
 	    }
 	
 	@Override
