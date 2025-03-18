@@ -16,7 +16,8 @@ public class ChatMessage {
 
     @Id
     private String id;
-    private ObjectId userId; 
+    private ObjectId userId;
+    private String type;
     private List<UserSearch> userSearch;
     private LocalDateTime timestamp = LocalDateTime.now();
      

@@ -42,7 +42,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	    private final RestTemplate restTemplate;
 	    private final ChatRepository chatRepository;
 
-	    // ✅ Use Constructor Injection
+	   
 	    public ChatMessageServiceImpl(
 	        ChatMessageRepository chatMessageRepository,
 	        OpenAIConfig openAIConfig,
@@ -70,7 +70,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 			HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-			// ✅ Use getChatUrl() instead of getUrl()
+			
 			ResponseEntity<Map> response = restTemplate.exchange(openAIConfig.getChatUrl(), HttpMethod.POST, entity,
 					Map.class);
 
@@ -97,7 +97,7 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public List<ChatMessage> getByUserId(String userId) {
-		ObjectId objectId = new ObjectId(userId); // Convert String to ObjectId
+		ObjectId objectId = new ObjectId(userId);
 		return chatMessageRepository.findByUserId(objectId);
 	}
 
@@ -157,12 +157,11 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 		}
 		return false;
 	}
-//public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage
+
 	@Override
 	public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage) {
 	    Map<String, Object> responseMap = new HashMap<>();
 
-	    // Fetch user from ChatEntity instead of ChatMessage
 	    Optional<ChatEntity> optionalUser = chatRepository.findById(userId.toString());
 
 	    if (optionalUser.isEmpty()) {
@@ -172,13 +171,10 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	    ChatEntity user = optionalUser.get();
 
-	    // Check if user has enough credits
 	    if (user.getCredits() < 0.25) {
 	        responseMap.put("message", "Insufficient credits. Please top up your balance.");
 	        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(responseMap);
 	    }
-
-	    // Deduct 0.25 credit
 	    user.setCredits(user.getCredits() - 0.25);
 	    chatRepository.save(user);
 
@@ -234,23 +230,20 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 			headers.setBearerAuth(openAIConfig.getKey());
 
 			Map<String, Object> requestBody = new HashMap<>();
-			requestBody.put("model", "dall-e-3"); // OpenAI's latest model
+			requestBody.put("model", "dall-e-3"); 
 			requestBody.put("prompt", prompt);
-			requestBody.put("n", 1); // Number of images
-			requestBody.put("size", "1024x1024"); // Image size
+			requestBody.put("n", 1); 
+			requestBody.put("size", "1024x1024"); 
 
 			HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-			// Correct URL for image generation
 			ResponseEntity<Map> response = restTemplate.exchange(openAIConfig.getImageUrl(), HttpMethod.POST, entity,
 					Map.class);
 
 			if (response.getBody() == null || !response.getBody().containsKey("data")) {
 				return "Error: Invalid response from OpenAI";
 			}
-
 			List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
-			return data.get(0).get("url").toString(); // Return the generated image URL
+			return data.get(0).get("url").toString(); 
 
 		} catch (Exception e) {
 			e.printStackTrace();
