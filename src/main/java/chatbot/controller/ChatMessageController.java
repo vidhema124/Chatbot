@@ -189,11 +189,12 @@ public class ChatMessageController {
 		}
 	}
 
-	@GetMapping("/search")
-	public ResponseEntity<Map<String, Object>> chat(@RequestParam ObjectId userId, @RequestParam String message) {
-		String decodedMessage = URLDecoder.decode(message, StandardCharsets.UTF_8);
-		return chatbotService.getChatResponse(userId, decodedMessage);
-	}
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> chat(@RequestParam ObjectId userId, @RequestParam String message) {
+        String decodedMessage = URLDecoder.decode(message, StandardCharsets.UTF_8);
+        return chatbotService.getChatResponse(userId, decodedMessage);
+    }
+
 
 	@GetMapping("/generate-image")
 	public ResponseEntity<?> generateImage(@RequestParam String userId, @RequestParam String prompt) {
