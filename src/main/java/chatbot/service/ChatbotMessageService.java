@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import chatbot.entity.ChatMessage;
 
@@ -23,5 +24,6 @@ public interface ChatbotMessageService {
 	
 	ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String decodedMessage);
 	String getImageResponse(String prompt);
+	String analyzePDF(MultipartFile file, String userId);
 	
 }

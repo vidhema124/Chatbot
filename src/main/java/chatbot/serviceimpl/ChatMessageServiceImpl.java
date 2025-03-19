@@ -1,5 +1,6 @@
 package chatbot.serviceimpl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,26 +40,21 @@ import lombok.RequiredArgsConstructor;
 
 public class ChatMessageServiceImpl implements ChatbotMessageService {
 
-	 private final ChatMessageRepository chatMessageRepository;
-	    private final OpenAIConfig openAIConfig;
-	    private final GeminiConfig geminiConfig;
-	    private final RestTemplate restTemplate;
-	    private final ChatRepository chatRepository;
+	private final ChatMessageRepository chatMessageRepository;
+	private final OpenAIConfig openAIConfig;
+	private final GeminiConfig geminiConfig;
+	private final RestTemplate restTemplate;
+	private final ChatRepository chatRepository;
 
-	   
-	    public ChatMessageServiceImpl(
-	        ChatMessageRepository chatMessageRepository,
-	        OpenAIConfig openAIConfig,
-	        GeminiConfig geminiConfig,
-	        RestTemplate restTemplate,
-	        ChatRepository chatRepository
-	    ) {
-	        this.chatMessageRepository = chatMessageRepository;
-	        this.openAIConfig = openAIConfig;
-	        this.geminiConfig = geminiConfig;
-	        this.restTemplate = restTemplate;
-	        this.chatRepository=chatRepository;
-	    }
+	public ChatMessageServiceImpl(ChatMessageRepository chatMessageRepository, OpenAIConfig openAIConfig,
+			GeminiConfig geminiConfig, RestTemplate restTemplate, ChatRepository chatRepository) {
+		this.chatMessageRepository = chatMessageRepository;
+		this.openAIConfig = openAIConfig;
+		this.geminiConfig = geminiConfig;
+		this.restTemplate = restTemplate;
+		this.chatRepository = chatRepository;
+	}
+
 	@Override
 	public String getChatResponse(String userMessage) {
 		try {
@@ -70,7 +69,6 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 			HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-			
 			ResponseEntity<Map> response = restTemplate.exchange(openAIConfig.getChatUrl(), HttpMethod.POST, entity,
 					Map.class);
 
@@ -160,66 +158,67 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 
 	@Override
 	public ResponseEntity<Map<String, Object>> getChatResponse(ObjectId userId, String userMessage) {
-	    Map<String, Object> responseMap = new HashMap<>();
+		Map<String, Object> responseMap = new HashMap<>();
 
-	    Optional<ChatEntity> optionalUser = chatRepository.findById(userId.toString());
+		Optional<ChatEntity> optionalUser = chatRepository.findById(userId.toString());
 
-	    if (optionalUser.isEmpty()) {
-	        responseMap.put("message", "User not found.");
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMap);
-	    }
+		if (optionalUser.isEmpty()) {
+			responseMap.put("message", "User not found.");
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMap);
+		}
 
-	    ChatEntity user = optionalUser.get();
+		ChatEntity user = optionalUser.get();
 
-	    if (user.getCredits() < 0.25) {
-	        responseMap.put("message", "Insufficient credits. Please top up your balance.");
-	        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(responseMap);
-	    }
-	    user.setCredits(user.getCredits() - 0.25);
-	    chatRepository.save(user);
+		if (user.getCredits() < 0.25) {
+			responseMap.put("message", "Insufficient credits. Please top up your balance.");
+			return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(responseMap);
+		}
+		user.setCredits(user.getCredits() - 0.25);
+		chatRepository.save(user);
 
-	    int maxRetries = 3;
-	    int retryDelay = 2000;
+		int maxRetries = 3;
+		int retryDelay = 2000;
 
-	    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-	        try {
-	            HttpHeaders headers = new HttpHeaders();
-	            headers.setContentType(MediaType.APPLICATION_JSON);
+		for (int attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(MediaType.APPLICATION_JSON);
 
-	            String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
-	            HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+				String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + userMessage + "\" }] }] }";
+				HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
-	            String apiUrl = geminiConfig.getUrl() + "?key=" + geminiConfig.getKey();
-	            ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
+				String apiUrl = geminiConfig.getUrl() + "?key=" + geminiConfig.getKey();
+				ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
 
-	            if (response.getStatusCode() == HttpStatus.OK) {
-	                ObjectMapper objectMapper = new ObjectMapper();
-	                JsonNode jsonNode = objectMapper.readTree(response.getBody());
-	                String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0)
-	                        .path("text").asText();
+				if (response.getStatusCode() == HttpStatus.OK) {
+					ObjectMapper objectMapper = new ObjectMapper();
+					JsonNode jsonNode = objectMapper.readTree(response.getBody());
+					String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0)
+							.path("text").asText();
 
-	                responseMap.put("botResponse", botResponse);
-	                responseMap.put("remainingCredits", user.getCredits());
-	                return ResponseEntity.ok(responseMap);
-	            }
-	        } catch (Exception e) {
-	            if (attempt < maxRetries) {
-	                try {
-	                    TimeUnit.MILLISECONDS.sleep(retryDelay);
-	                    retryDelay *= 2;
-	                } catch (InterruptedException ignored) {
-	                }
-	            } else {
-	                responseMap.put("status", "error");
-	                responseMap.put("message", "Sorry, I am currently unavailable. Please try again later.");
-	                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseMap);
-	            }
-	        }
-	    }
+					responseMap.put("botResponse", botResponse);
+					responseMap.put("remainingCredits", user.getCredits());
+					responseMap.put("ModelType", "Gemini");
+					return ResponseEntity.ok(responseMap);
+				}
+			} catch (Exception e) {
+				if (attempt < maxRetries) {
+					try {
+						TimeUnit.MILLISECONDS.sleep(retryDelay);
+						retryDelay *= 2;
+					} catch (InterruptedException ignored) {
+					}
+				} else {
+					responseMap.put("status", "error");
+					responseMap.put("message", "Sorry, I am currently unavailable. Please try again later.");
+					return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseMap);
+				}
+			}
+		}
 
-	    responseMap.put("status", "error");
-	    responseMap.put("message", "Failed to fetch response from AI.");
-	    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
+		responseMap.put("status", "error");
+		responseMap.put("message", "Failed to fetch response from AI.");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
 	}
 
 	@Override
@@ -230,10 +229,10 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 			headers.setBearerAuth(openAIConfig.getKey());
 
 			Map<String, Object> requestBody = new HashMap<>();
-			requestBody.put("model", "dall-e-3"); 
+			requestBody.put("model", "dall-e-3");
 			requestBody.put("prompt", prompt);
-			requestBody.put("n", 1); 
-			requestBody.put("size", "1024x1024"); 
+			requestBody.put("n", 1);
+			requestBody.put("size", "1024x1024");
 
 			HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 			ResponseEntity<Map> response = restTemplate.exchange(openAIConfig.getImageUrl(), HttpMethod.POST, entity,
@@ -243,12 +242,93 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 				return "Error: Invalid response from OpenAI";
 			}
 			List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
-			return data.get(0).get("url").toString(); 
+			return data.get(0).get("url").toString();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "Error: Unable to generate image";
 		}
+	}
+
+	@Override
+	public String analyzePDF(MultipartFile file, String userId) {
+		Optional<ChatEntity> userOptional = chatRepository.findById(userId);
+
+		if (userOptional.isEmpty()) {
+			return "User not found";
+		}
+
+		ChatEntity user = userOptional.get();
+
+		// Check if user has enough credits
+		if (user.getCredits() < 0.25) {
+			return "Insufficient credits";
+		}
+
+		// Extract text from PDF
+		String extractedText;
+		try {
+			extractedText = extractTextFromPDF(file);
+		} catch (IOException e) {
+			return "Error reading PDF file: " + e.getMessage();
+		}
+
+		if (extractedText.isEmpty()) {
+			return "Could not extract text from the PDF.";
+		}
+
+		// Send extracted text to OpenAI API for analysis
+		String feedback = analyzeTextWithOpenAI(extractedText);
+
+		// Deduct 0.25 credits
+		user.setCredits(user.getCredits() - 0.25);
+		chatRepository.save(user);
+
+		return feedback;
+	}
+
+	private String extractTextFromPDF(MultipartFile file) throws IOException {
+		try (PDDocument document = PDDocument.load(file.getInputStream())) {
+			PDFTextStripper pdfStripper = new PDFTextStripper();
+			return pdfStripper.getText(document);
+		}
+	}
+
+	private String analyzeTextWithOpenAI(String text) {
+	    String apiKey = openAIConfig.getKey();
+	    String apiUrl = openAIConfig.getChatUrl();
+
+	    // Create the request body
+	    Map<String, Object> requestBody = new HashMap<>();
+	    requestBody.put("model", "gpt-4");
+	    requestBody.put("messages", List.of(
+	            Map.of("role", "system", "content",
+	                    "You are an AI that reviews PDFs and provides feedback on formatting issues, missing sections, and improvements."),
+	            Map.of("role", "user", "content",
+	                    "Here is the text extracted from a PDF document:\n\n" + text
+	                            + "\n\nIdentify any formatting issues, missing sections, or improvements needed.")
+	    ));
+	    requestBody.put("temperature", 0.7);
+
+	   
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    headers.setBearerAuth(apiKey);
+
+	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+	  
+	    ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
+
+	   
+	    List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+	    if (choices != null && !choices.isEmpty()) {
+	        Map<String, Object> firstChoice = choices.get(0);
+	        Map<String, String> message = (Map<String, String>) firstChoice.get("message"); 
+	        return message.get("content"); 
+	    }
+
+	    return "No response from OpenAI API";
 	}
 
 }

@@ -20,5 +20,7 @@ public interface ChatService {
 	Map<String, Object> login(String email, String password);
 	Optional<ChatEntity> findById(String id);
 	ChatEntity chatUpdate(ChatEntity chatEntity);
+	
+	
 
 }

@@ -1,5 +1,7 @@
 package chatbot.controller;
 
+
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -7,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import chatbot.entity.ChatEntity;
 import chatbot.entity.ChatMessage;
@@ -66,6 +68,7 @@ public class ChatMessageController {
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("botResponse", botResponse);
 	        response.put("remainingCredits", user.getCredits());
+	        response.put("ModelType", "OpenAI");
 
 	        return ResponseEntity.ok(response);
 
@@ -88,16 +91,28 @@ public class ChatMessageController {
 
 	@GetMapping("/get-by-userid/{userId}")
 	public ResponseEntity<Map<String, Object>> getChatMessagesByUserId(@PathVariable String userId) {
-		List<ChatMessage> chatMessages = chatbotService.getByUserId(userId);
+	    ObjectId objectId = new ObjectId(userId);
 
-		if (chatMessages.isEmpty()) {
-			Map<String, Object> response = new HashMap<>();
-			response.put("message", "No chats found for this user");
-			return ResponseEntity.ok(response); // Status 200
-		}
+	    // Fetch chat messages for the user
+	    List<ChatMessage> chatMessages = chatbotService.getByUserId(userId);
 
-		return ResponseEntity.ok(Map.of("chatMessages", chatMessages));
+	    // Fetch user's credits
+	    ChatEntity chatEntity = chatRepository.findById(userId).orElse(null);
+	    double credits = (chatEntity != null) ? chatEntity.getCredits() : 0.0;
+
+	    // Prepare response
+	    Map<String, Object> response = new HashMap<>();
+	    response.put("credits", credits);
+	    
+	    if (chatMessages.isEmpty()) {
+	        response.put("message", "No chats found for this user");
+	        return ResponseEntity.ok(response); // Status 200
+	    }
+
+	    response.put("chatMessages", chatMessages);
+	    return ResponseEntity.ok(response);
 	}
+
 
 	@PutMapping("/update-by/{id}")
 	public ResponseEntity<Map<String, Object>> updateChatMessageById(@PathVariable String id,
@@ -203,6 +218,8 @@ public class ChatMessageController {
             Map<String, Object> response = new HashMap<>();
             response.put("imageUrl", imageUrl);
             response.put("remainingCredits", user.getCredits());
+            response.put("ModelType", "OpenAI");
+            
 
             return ResponseEntity.ok(response);
 
@@ -214,5 +231,16 @@ public class ChatMessageController {
                     .body("An error occurred while generating the image");
         }
     }
+    @PostMapping("/analyze-pdf")
+    public ResponseEntity<String> analyzePDF(@RequestParam("file") MultipartFile file,
+                                             @RequestParam("userId") String userId) {
+        try {
+            String response = chatbotService.analyzePDF(file, userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {  // Catch general exceptions
+            return ResponseEntity.internalServerError().body("Error analyzing PDF: " + e.getMessage());
+        }
+    }
+
 
 }

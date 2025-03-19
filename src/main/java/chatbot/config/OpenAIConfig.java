@@ -13,4 +13,5 @@ public class OpenAIConfig {
     private String key;
     private String chatUrl;  // Chat API URL
     private String imageUrl; // Image API URL
+    
 }
