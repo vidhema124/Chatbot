@@ -251,84 +251,88 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	}
 
 	@Override
-	public String analyzePDF(MultipartFile file, String userId) {
-		Optional<ChatEntity> userOptional = chatRepository.findById(userId);
+	public Map<String, Object> analyzePDF(MultipartFile file, String userId) {
+	    Optional<ChatEntity> userOptional = chatRepository.findById(userId);
 
-		if (userOptional.isEmpty()) {
-			return "User not found";
-		}
+	    if (userOptional.isEmpty()) {
+	        return Map.of("error", "User not found");
+	    }
 
-		ChatEntity user = userOptional.get();
+	    ChatEntity user = userOptional.get();
 
-		// Check if user has enough credits
-		if (user.getCredits() < 0.25) {
-			return "Insufficient credits";
-		}
+	    if (user.getCredits() < 0.25) {
+	        return Map.of("error", "Insufficient credits", "remainingCredits", user.getCredits());
+	    }
+	    String extractedText;
+	    try {
+	        extractedText = extractTextFromPDF(file);
+	    } catch (IOException e) {
+	        return Map.of("error", "Error reading PDF file: " + e.getMessage());
+	    }
 
-		// Extract text from PDF
-		String extractedText;
-		try {
-			extractedText = extractTextFromPDF(file);
-		} catch (IOException e) {
-			return "Error reading PDF file: " + e.getMessage();
-		}
+	    if (extractedText == null || extractedText.isEmpty()) {
+	        return Map.of("error", "Could not extract text from the PDF.");
+	    }
+	    String limitedText = limitTextSize(extractedText, 4000);
 
-		if (extractedText.isEmpty()) {
-			return "Could not extract text from the PDF.";
-		}
+	    String feedback = analyzeTextWithOpenAI(limitedText);
 
-		// Send extracted text to OpenAI API for analysis
-		String feedback = analyzeTextWithOpenAI(extractedText);
-
-		// Deduct 0.25 credits
-		user.setCredits(user.getCredits() - 0.25);
-		chatRepository.save(user);
-
-		return feedback;
+	    user.setCredits(user.getCredits() - 0.25);
+	    chatRepository.save(user);
+	    return Map.of(
+	        "feedback", feedback,
+	        "remainingCredits", user.getCredits(),
+	        "modelType", "OpenAI"
+	    );
 	}
 
 	private String extractTextFromPDF(MultipartFile file) throws IOException {
-		try (PDDocument document = PDDocument.load(file.getInputStream())) {
-			PDFTextStripper pdfStripper = new PDFTextStripper();
-			return pdfStripper.getText(document);
-		}
+	    try (PDDocument document = PDDocument.load(file.getInputStream())) {
+	        PDFTextStripper pdfStripper = new PDFTextStripper();
+	        return pdfStripper.getText(document);
+	    }
 	}
 
 	private String analyzeTextWithOpenAI(String text) {
 	    String apiKey = openAIConfig.getKey();
 	    String apiUrl = openAIConfig.getChatUrl();
 
-	    // Create the request body
 	    Map<String, Object> requestBody = new HashMap<>();
 	    requestBody.put("model", "gpt-4");
 	    requestBody.put("messages", List.of(
-	            Map.of("role", "system", "content",
-	                    "You are an AI that reviews PDFs and provides feedback on formatting issues, missing sections, and improvements."),
-	            Map.of("role", "user", "content",
-	                    "Here is the text extracted from a PDF document:\n\n" + text
-	                            + "\n\nIdentify any formatting issues, missing sections, or improvements needed.")
+	        Map.of("role", "system", "content",
+	            "You are an AI that reviews PDFs and provides feedback on formatting issues, missing sections, and improvements."),
+	        Map.of("role", "user", "content",
+	            "Here is the text extracted from a PDF document:\n\n" + text +
+	            "\n\nIdentify any formatting issues, missing sections, or improvements needed.")
 	    ));
 	    requestBody.put("temperature", 0.7);
 
-	   
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.setBearerAuth(apiKey);
-
 	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-	  
 	    ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
-
-	   
-	    List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
-	    if (choices != null && !choices.isEmpty()) {
-	        Map<String, Object> firstChoice = choices.get(0);
-	        Map<String, String> message = (Map<String, String>) firstChoice.get("message"); 
-	        return message.get("content"); 
+	    if (response.getBody() != null && response.getBody().containsKey("choices")) {
+	        List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+	        if (choices != null && !choices.isEmpty()) {
+	            Map<String, Object> firstChoice = choices.get(0);
+	            Map<String, String> message = (Map<String, String>) firstChoice.get("message");
+	            return message.get("content");
+	        }
 	    }
-
 	    return "No response from OpenAI API";
+	}
+
+	private String limitTextSize(String text, int maxLength) {
+	    if (text == null || text.isEmpty()) {
+	        return "";
+	    }
+	    if (text.length() > maxLength) {
+	        return text.substring(0, text.offsetByCodePoints(0, maxLength)) + "... (truncated)";
+	    }
+	    return text;
 	}
 
 }

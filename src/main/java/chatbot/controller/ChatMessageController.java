@@ -232,15 +232,19 @@ public class ChatMessageController {
         }
     }
     @PostMapping("/analyze-pdf")
-    public ResponseEntity<String> analyzePDF(@RequestParam("file") MultipartFile file,
-                                             @RequestParam("userId") String userId) {
+    public ResponseEntity<Map<String, Object>> analyzePDF(@RequestParam("file") MultipartFile file,
+                                                          @RequestParam("userId") String userId) {
         try {
-            String response = chatbotService.analyzePDF(file, userId);
+            Map<String, Object> response = chatbotService.analyzePDF(file, userId);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {  // Catch general exceptions
-            return ResponseEntity.internalServerError().body("Error analyzing PDF: " + e.getMessage());
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error analyzing PDF: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
+
+
 
 
 }
