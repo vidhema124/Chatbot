@@ -78,6 +78,7 @@ public class ChatServiceIMPL implements ChatService {
 	        response.put("name", userData.getName());
 	        response.put("email", userData.getEmail());
 	        response.put("image", userData.getImage());
+	        response.put("credits", userData.getCredits());
 
 	        return response;
 	    }

@@ -243,8 +243,4 @@ public class ChatMessageController {
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
-
-
-
-
 }
