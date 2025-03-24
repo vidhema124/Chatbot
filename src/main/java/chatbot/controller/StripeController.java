@@ -16,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stripe")
+@CrossOrigin(origins = { "http://localhost:3000", "https://vchatai.netlify.app" })
 @RequiredArgsConstructor
 public class StripeController {
 
