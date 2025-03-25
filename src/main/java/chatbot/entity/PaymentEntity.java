@@ -13,4 +13,5 @@ public class PaymentEntity {
     private String customerEmail;
     private String status;
     private Long amount;
+	private String name;
 }

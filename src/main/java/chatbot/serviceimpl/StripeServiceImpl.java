@@ -20,7 +20,7 @@ public class StripeServiceImpl implements StripeService {
     @Override
     public PaymentIntent createPaymentIntent(PaymentRequestDto paymentRequest) throws StripeException {
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                .setAmount(paymentRequest.getAmount()) // Ensure amount is in cents
+                .setAmount(paymentRequest.getAmount()) 
                 .setCurrency("usd")
                 .setReceiptEmail(paymentRequest.getEmail())
                 .setDescription("Payment for order")

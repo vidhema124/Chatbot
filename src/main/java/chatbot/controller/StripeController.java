@@ -32,10 +32,14 @@ public class StripeController {
             payment.setCustomerEmail(paymentRequest.getEmail());
             payment.setStatus(paymentIntent.getStatus());
             payment.setAmount(paymentRequest.getAmount());
+            payment.setName(paymentRequest.getName());
 
             stripeService.savePayment(payment);
+            Map<String, Object> response = new HashMap<>();
+            response.put("paymentId", payment.getPaymentId());
+            response.put("clientSecret", paymentIntent.getClientSecret());
 
-            return ResponseEntity.ok(Map.of("clientSecret", paymentIntent.getClientSecret()));
+            return ResponseEntity.ok(response);
         } catch (StripeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
