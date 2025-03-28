@@ -10,15 +10,17 @@ import lombok.ToString;
 @ToString
 @Document(collection = "chatbot")
 public class ChatEntity {
-    private String id;
-    private String name;
-    private String email;
-    private String password;
-    private String image;
-    private String googleId;
-    private boolean verified = false;
-    private String verificationToken;
-    private boolean googleVerification;
-    private boolean isGoogleLogin;
-    private double credits;
+	private String id;
+	private String name;
+	private String email;
+	private String password;
+	private String image;
+	private String googleId;
+	private boolean verified = false;
+	private String verificationToken;
+	private boolean googleVerification;
+	private boolean isGoogleLogin;
+	private double credits;
+	private String plans = "free";
+
 }

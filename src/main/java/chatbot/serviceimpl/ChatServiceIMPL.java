@@ -37,62 +37,59 @@ public class ChatServiceIMPL implements ChatService {
 	private final PasswordEncoder passwordEncoder;
 	private final PaymentRepository paymentRepository;
 
-	 @Override
-	    public Map<String, Object> login(String email, String password) {
-	        Optional<ChatEntity> user = chatRepository.findByEmail(email);
+	@Override
+	public Map<String, Object> login(String email, String password) {
+		Optional<ChatEntity> user = chatRepository.findByEmail(email);
 
-	        if (user.isPresent()) {
-	            ChatEntity userData = user.get();
+		if (user.isPresent()) {
+			ChatEntity userData = user.get();
 
-	            if (userData.isGoogleLogin()) {
-	                return generateLoginResponse(userData);
-	            }
+			if (userData.isGoogleLogin()) {
+				return generateLoginResponse(userData);
+			}
 
-	            if (!userData.isGoogleLogin()) {
-	                if (password == null || password.trim().isEmpty()) {
-	                    return createErrorResponse("Please Signup First......");
-	                }
-	                if (passwordEncoder.matches(password, userData.getPassword())) {
-	                    if (userData.isVerified()) {
-	                        return generateLoginResponse(userData);
-	                    } else {
-	                        return createErrorResponse("Please check your email and verify your email address.");
-	                    }
-	                }
-	            }
-	        }
+			if (!userData.isGoogleLogin()) {
+				if (password == null || password.trim().isEmpty()) {
+					return createErrorResponse("Please Signup First......");
+				}
+				if (passwordEncoder.matches(password, userData.getPassword())) {
+					if (userData.isVerified()) {
+						return generateLoginResponse(userData);
+					} else {
+						return createErrorResponse("Please check your email and verify your email address.");
+					}
+				}
+			}
+		}
 
-	        return createErrorResponse("Email or Password is incorrect.");
-	    }
+		return createErrorResponse("Email or Password is incorrect.");
+	}
 
-	    private Map<String, Object> generateLoginResponse(ChatEntity userData) {
-	        SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-	        String token = Jwts.builder()
-	                .setSubject(userData.getEmail())
-	                .setIssuedAt(new Date())
-	                .setExpiration(new Date(System.currentTimeMillis() + 3600000))
-	                .signWith(key, SignatureAlgorithm.HS256)
-	                .compact();
+	private Map<String, Object> generateLoginResponse(ChatEntity userData) {
+		SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+		String token = Jwts.builder().setSubject(userData.getEmail()).setIssuedAt(new Date())
+				.setExpiration(new Date(System.currentTimeMillis() + 3600000)).signWith(key, SignatureAlgorithm.HS256)
+				.compact();
 
-	        Map<String, Object> response = new HashMap<>();
-	        response.put("message", "Login successfully");
-	        response.put("status", 200);
-	        response.put("token", token);
-	        response.put("id", userData.getId());
-	        response.put("name", userData.getName());
-	        response.put("email", userData.getEmail());
-	        response.put("image", userData.getImage());
-	        response.put("credits", userData.getCredits());
+		Map<String, Object> response = new HashMap<>();
+		response.put("message", "Login successfully");
+		response.put("status", 200);
+		response.put("token", token);
+		response.put("id", userData.getId());
+		response.put("name", userData.getName());
+		response.put("email", userData.getEmail());
+		response.put("image", userData.getImage());
+		response.put("credits", userData.getCredits());
 
-	        return response;
-	    }
-	    private Map<String, Object> createErrorResponse(String message) {
-	        Map<String, Object> errorResponse = new HashMap<>();
-	        errorResponse.put("message", message);
-	        errorResponse.put("status", 400);
-	        return errorResponse;
-	    }
-	
+		return response;
+	}
+
+	private Map<String, Object> createErrorResponse(String message) {
+		Map<String, Object> errorResponse = new HashMap<>();
+		errorResponse.put("message", message);
+		errorResponse.put("status", 400);
+		return errorResponse;
+	}
 
 	@Override
 	public boolean verifyUser(String token) {
@@ -163,56 +160,58 @@ public class ChatServiceIMPL implements ChatService {
 
 	@Override
 	public ResponseEntity<Map<String, Object>> deleteChatEntity(String id) {
-	    Map<String, Object> response = new HashMap<>();
+		Map<String, Object> response = new HashMap<>();
 
-	    if (chatRepository.existsById(id)) {
-	        chatRepository.deleteById(id);
-	        response.put("status", "success");
-	        response.put("message", "User details deleted successfully.");
-	        return ResponseEntity.ok(response);
-	    } else {
-	        response.put("status", "error");
-	        response.put("message", "User details with id " + id + " not found.");
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-	    }
+		if (chatRepository.existsById(id)) {
+			chatRepository.deleteById(id);
+			response.put("status", "success");
+			response.put("message", "User details deleted successfully.");
+			return ResponseEntity.ok(response);
+		} else {
+			response.put("status", "error");
+			response.put("message", "User details with id " + id + " not found.");
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+		}
 	}
-	  @Override
-	    public ResponseEntity<Map<String, Object>> getUserByEmail(String email) {
-	        Map<String, Object> response = new HashMap<>();
-	        Optional<ChatEntity> user = chatRepository.findByEmail(email);
 
-	        if (user.isPresent()) {
-	            response.put("status", "success");
-	            response.put("user", user.get());
-	            return ResponseEntity.ok(response);
-	        } else {
-	            response.put("status", "error");
-	            response.put("message", "User not found with email: " + email);
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-	        }
-	    }
-	  @Override
-	  public ResponseEntity<Map<String, Object>> createUser(ChatEntity chatEntity) {
-	      Map<String, Object> response = new HashMap<>();
-	      
-	      if (chatRepository.findByEmail(chatEntity.getEmail()).isPresent()) {
-	          response.put("status", "error");
-	          response.put("message", "Email already registered.");
-	          return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-	      }
-	      
-	      ChatEntity savedUser = chatRepository.save(chatEntity);
-	      
-	      response.put("status", "success");
-	      response.put("message", "User created successfully.");
-	      response.put("id", savedUser.getId());
-	      response.put("user", savedUser);
-	      return ResponseEntity.status(HttpStatus.CREATED).body(response);
-	  }
+	@Override
+	public ResponseEntity<Map<String, Object>> getUserByEmail(String email) {
+		Map<String, Object> response = new HashMap<>();
+		Optional<ChatEntity> user = chatRepository.findByEmail(email);
+
+		if (user.isPresent()) {
+			response.put("status", "success");
+			response.put("user", user.get());
+			return ResponseEntity.ok(response);
+		} else {
+			response.put("status", "error");
+			response.put("message", "User not found with email: " + email);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+		}
+	}
+
+	@Override
+	public ResponseEntity<Map<String, Object>> createUser(ChatEntity chatEntity) {
+		Map<String, Object> response = new HashMap<>();
+
+		if (chatRepository.findByEmail(chatEntity.getEmail()).isPresent()) {
+			response.put("status", "error");
+			response.put("message", "Email already registered.");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+		}
+
+		ChatEntity savedUser = chatRepository.save(chatEntity);
+
+		response.put("status", "success");
+		response.put("message", "User created successfully.");
+		response.put("id", savedUser.getId());
+		response.put("user", savedUser);
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	}
 
 	@Override
 	public Optional<ChatEntity> findById(String id) {
-		Optional<ChatEntity> response=chatRepository.findById(id);
+		Optional<ChatEntity> response = chatRepository.findById(id);
 		return response;
 	}
 
@@ -221,33 +220,43 @@ public class ChatServiceIMPL implements ChatService {
 		return chatRepository.save(chatEntity);
 	}
 	
-	
-	  @Override
-	    public ChatEntity updateUserCreditsByPayments(String userId) {
-	        Optional<ChatEntity> userOptional = chatRepository.findById(userId);
-	        
-	        if (userOptional.isEmpty()) {
-	            throw new RuntimeException("User not found");
-	        }
+	@Override
+	public ChatEntity updateUserCreditsByPayments(String userId) {
+	    Optional<ChatEntity> userOptional = chatRepository.findById(userId);
 
-	        ChatEntity user = userOptional.get();
-	        List<PaymentEntity> payments = paymentRepository.findByCustomerEmail(user.getEmail());
-
-	        if (payments.isEmpty()) {
-	            throw new RuntimeException("No payments found for this user");
-	        }
-
-	        double totalCredits = 0;
-	        for (PaymentEntity payment : payments) {
-	            if ("succeeded".equals(payment.getStatus())) {
-	                double amountInDollars = payment.getAmount() / 100.0; 
-	                totalCredits += amountInDollars * 10; 
-	            }
-	        }
-
-	        user.setCredits(totalCredits);
-	        return chatRepository.save(user);
+	    if (userOptional.isEmpty()) {
+	        throw new RuntimeException("User not found");
 	    }
-	
+
+	    ChatEntity user = userOptional.get();
+	    List<PaymentEntity> payments = paymentRepository.findByCustomerEmail(user.getEmail());
+
+	    if (payments.isEmpty()) {
+	        throw new RuntimeException("No payments found for this user");
+	    }
+
+	    double totalCredits = user.getCredits(); 
+
+	    for (PaymentEntity payment : payments) {
+	        if ("succeeded".equals(payment.getStatus()) && payment.isAmountStatus()) {
+	            double amountInDollars = payment.getAmount() / 100.0;
+	            totalCredits += amountInDollars * 10;
+
+	            payment.setAmountStatus(false);
+	            paymentRepository.save(payment);
+	        }
+	    }
+
+	    user.setCredits(totalCredits);
+
+	    if (totalCredits > 20) {
+	        user.setPlans("premium");
+	    } else {
+	        user.setPlans("free");
+	    } 
+
+	    return chatRepository.save(user);
+	}
+
 
 }

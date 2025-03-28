@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -51,4 +52,9 @@ public class StripeServiceImpl implements StripeService {
 		}
 		return null;
 	}
+	
+	 @Override
+	    public List<PaymentEntity> getPaymentsByEmail(String email) {
+	        return paymentRepository.findByCustomerEmail(email);
+	    }
 }

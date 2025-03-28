@@ -11,13 +11,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "payments")
 public class PaymentEntity {
 	@Id
-	private String id; 
-	private String paymentId; 
+	private String id;
+	private String paymentId;
 	private String customerEmail;
 	private String status;
 	private Long amount;
 	private String name;
-	private String userId;
 	private LocalDateTime createDate;
+	private boolean amountStatus = true;
 
 }

@@ -1,17 +1,22 @@
 package chatbot.controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 
 import chatbot.entity.PaymentEntity;
@@ -70,4 +75,40 @@ public class StripeController {
 					.body("Error updating payment: " + e.getMessage());
 		}
 	}
+	
+	  @PostMapping("/webhook")
+	    public ResponseEntity<String> handleWebhook(@RequestBody String payload,
+	                                                @RequestHeader("Stripe-Signature") String sigHeader) {
+	        try {
+	            // Convert JSON payload to Stripe Event object
+	            Event event = Event.GSON.fromJson(payload, Event.class);
+
+	            if ("payment_intent.succeeded".equals(event.getType())) {
+	                // Extract Payment Intent object
+	                PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
+
+	                if (paymentIntent != null) {
+	                    String paymentId = paymentIntent.getId();
+	                    stripeService.updatePaymentStatus(paymentId, "succeeded");
+	                    System.out.println("✅ Payment status updated for: " + paymentId);
+	                }
+	            }
+
+	            return ResponseEntity.ok("Webhook received");
+
+	        } catch (Exception e) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook error: " + e.getMessage());
+	        }
+	    }
+	
+	
+	@GetMapping("/payments-getby-email")
+	public ResponseEntity<?> getPaymentsByEmail(@RequestParam String email) {
+        List<PaymentEntity> payments = stripeService.getPaymentsByEmail(email);
+        if (payments.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No payments found for this email.");
+        }
+        return ResponseEntity.ok(payments);
+    }
+	
 }
