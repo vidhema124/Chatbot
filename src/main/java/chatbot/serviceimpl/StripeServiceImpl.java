@@ -24,6 +24,7 @@ public class StripeServiceImpl implements StripeService {
                 .setCurrency("usd")
                 .setReceiptEmail(paymentRequest.getEmail())
                 .setDescription("Payment for order")
+                .addPaymentMethodType("card") 
                 .build();
 
         return PaymentIntent.create(params);
