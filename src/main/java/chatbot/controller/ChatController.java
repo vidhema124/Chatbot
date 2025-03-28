@@ -124,6 +124,9 @@ public class ChatController {
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
-
+	}
+	@GetMapping("/user-by-id/{userId}")
+	public ResponseEntity<?> getUserById(@PathVariable String userId) {
+	    return chatService.getUserById(userId);
 	}
 }

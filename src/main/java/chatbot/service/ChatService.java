@@ -22,6 +22,7 @@ public interface ChatService {
 	ChatEntity chatUpdate(ChatEntity chatEntity);
 	
 	 ChatEntity updateUserCreditsByPayments(String userId);
+	ResponseEntity<?> getUserById(String userId);
 	
 	
 

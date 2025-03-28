@@ -257,6 +257,17 @@ public class ChatServiceIMPL implements ChatService {
 
 	    return chatRepository.save(user);
 	}
+	@Override
+	public ResponseEntity<?> getUserById(String userId) {
+	    Optional<ChatEntity> userOptional = chatRepository.findById(userId);
+	    
+	    if (userOptional.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(Map.of("message", "User not found"));
+	    }
+
+	    return ResponseEntity.ok(userOptional.get());
+	}
 
 
 }
