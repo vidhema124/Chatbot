@@ -11,4 +11,6 @@ public interface StripeService {
 //    PaymentIntent createPaymentIntent(Map<String, Object> paymentRequest) throws StripeException;
     PaymentEntity savePayment(PaymentEntity payment);
 	PaymentIntent createPaymentIntent(PaymentRequestDto paymentRequest) throws StripeException;
+	PaymentIntent retrievePaymentIntent(String paymentId) throws StripeException;
+    PaymentEntity updatePaymentStatus(String paymentId, String status);
 }

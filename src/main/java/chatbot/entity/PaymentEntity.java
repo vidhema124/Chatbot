@@ -1,17 +1,23 @@
 package chatbot.entity;
 
 import lombok.Data;
+
+import java.time.LocalDateTime;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Document(collection = "payments")
 public class PaymentEntity {
-    @Id
-    private String id; // MongoDB document ID
-    private String paymentId; // Stripe payment ID
-    private String customerEmail;
-    private String status;
-    private Long amount;
+	@Id
+	private String id; 
+	private String paymentId; 
+	private String customerEmail;
+	private String status;
+	private Long amount;
 	private String name;
+	private String userId;
+	private LocalDateTime createDate;
+
 }

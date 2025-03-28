@@ -2,6 +2,7 @@ package chatbot.serviceimpl;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,7 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import chatbot.entity.ChatEntity;
+import chatbot.entity.PaymentEntity;
 import chatbot.respository.ChatRepository;
+import chatbot.respository.PaymentRepository;
 import chatbot.service.ChatService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -32,6 +35,7 @@ public class ChatServiceIMPL implements ChatService {
 
 	private final ChatRepository chatRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final PaymentRepository paymentRepository;
 
 	 @Override
 	    public Map<String, Object> login(String email, String password) {
@@ -216,5 +220,34 @@ public class ChatServiceIMPL implements ChatService {
 	public ChatEntity chatUpdate(ChatEntity chatEntity) {
 		return chatRepository.save(chatEntity);
 	}
+	
+	
+	  @Override
+	    public ChatEntity updateUserCreditsByPayments(String userId) {
+	        Optional<ChatEntity> userOptional = chatRepository.findById(userId);
+	        
+	        if (userOptional.isEmpty()) {
+	            throw new RuntimeException("User not found");
+	        }
+
+	        ChatEntity user = userOptional.get();
+	        List<PaymentEntity> payments = paymentRepository.findByCustomerEmail(user.getEmail());
+
+	        if (payments.isEmpty()) {
+	            throw new RuntimeException("No payments found for this user");
+	        }
+
+	        double totalCredits = 0;
+	        for (PaymentEntity payment : payments) {
+	            if ("succeeded".equals(payment.getStatus())) {
+	                double amountInDollars = payment.getAmount() / 100.0; 
+	                totalCredits += amountInDollars * 10; 
+	            }
+	        }
+
+	        user.setCredits(totalCredits);
+	        return chatRepository.save(user);
+	    }
+	
 
 }

@@ -19,5 +19,7 @@ public interface ChatRepository extends MongoRepository<ChatEntity, String> {
     Optional<Double> findCreditsByUserId(ObjectId userId);
 
     
+
+    
     
 }

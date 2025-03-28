@@ -28,8 +28,6 @@ import lombok.AllArgsConstructor;
 public class ChatController {
 	ChatService chatService;
 
-
-
 	@PostMapping("/login")
 	public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> requestBody) {
 		String email = requestBody.get("email");
@@ -44,25 +42,23 @@ public class ChatController {
 		return ResponseEntity.ok(response);
 	}
 
-
 	@PutMapping("/update/{id}")
-	public ResponseEntity<Map<String, String>> updateProductById(@PathVariable String id, @RequestBody ChatEntity chatEntity) {
-	    Optional<ChatEntity> emp = chatService.findById(id);
+	public ResponseEntity<Map<String, String>> updateProductById(@PathVariable String id,
+			@RequestBody ChatEntity chatEntity) {
+		Optional<ChatEntity> emp = chatService.findById(id);
 
-	    if (emp.isPresent()) {
-	        chatEntity.setId(id);
-	        chatService.chatUpdate(chatEntity);
-	        Map<String, String> response = new HashMap<>();
-	        response.put("message", "Product details updated successfully");
-	        return ResponseEntity.ok(response);
-	    } else {
-	        Map<String, String> errorResponse = new HashMap<>();
-	        errorResponse.put("error", "Product details not exist");
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-	    }
+		if (emp.isPresent()) {
+			chatEntity.setId(id);
+			chatService.chatUpdate(chatEntity);
+			Map<String, String> response = new HashMap<>();
+			response.put("message", "Product details updated successfully");
+			return ResponseEntity.ok(response);
+		} else {
+			Map<String, String> errorResponse = new HashMap<>();
+			errorResponse.put("error", "Product details not exist");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+		}
 	}
-
-
 
 	@GetMapping("/verify-link")
 	public ResponseEntity<?> verifyUser(@RequestParam String token) {
@@ -118,5 +114,15 @@ public class ChatController {
 	@PostMapping("/create-user")
 	public ResponseEntity<Map<String, Object>> createUser(@RequestBody ChatEntity chatEntity) {
 		return chatService.createUser(chatEntity);
+	}
+
+	@GetMapping("/update-credits/{userId}")
+	public ResponseEntity<?> updateCredits(@PathVariable String userId) {
+		try {
+			ChatEntity updatedUser = chatService.updateUserCreditsByPayments(userId);
+			return ResponseEntity.ok(updatedUser);
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
 	}
 }

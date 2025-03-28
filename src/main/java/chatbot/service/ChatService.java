@@ -21,6 +21,8 @@ public interface ChatService {
 	Optional<ChatEntity> findById(String id);
 	ChatEntity chatUpdate(ChatEntity chatEntity);
 	
+	 ChatEntity updateUserCreditsByPayments(String userId);
+	
 	
 
 }
