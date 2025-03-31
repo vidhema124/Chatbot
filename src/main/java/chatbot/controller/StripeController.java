@@ -1,9 +1,11 @@
 package chatbot.controller;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -19,8 +21,12 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 
+import chatbot.entity.ChatEntity;
 import chatbot.entity.PaymentEntity;
 import chatbot.entity.PaymentRequestDto;
+import chatbot.respository.ChatRepository;
+import chatbot.respository.PaymentRepository;
+import chatbot.service.ChatService;
 import chatbot.service.StripeService;
 import lombok.RequiredArgsConstructor;
 
@@ -30,7 +36,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StripeController {
 
-	private final StripeService stripeService;
+	@Autowired
+	private ChatService chatService;
+
+	@Autowired
+	private StripeService stripeService;
+
+	@Autowired
+	private ChatRepository chatRepository; // Ensure this is injected
+
+	@Autowired
+	private PaymentRepository paymentRepository;
 
 	@PostMapping("/create-payment-intent")
 	public ResponseEntity<?> createPaymentIntent(@RequestBody PaymentRequestDto paymentRequest) {
@@ -55,60 +71,48 @@ public class StripeController {
 		}
 	}
 
-	@PostMapping("/update-status")
-	public ResponseEntity<String> updatePaymentStatus(@RequestBody Map<String, String> request) {
-		String paymentId = request.get("paymentId");
-
+	
+	@PostMapping("/process-payment")
+	public ResponseEntity<?> processPayment(@RequestBody Map<String, String> request) {
 		try {
-			PaymentIntent paymentIntent = stripeService.retrievePaymentIntent(paymentId);
 
-			if ("succeeded".equals(paymentIntent.getStatus())) {
-				PaymentEntity payment = stripeService.updatePaymentStatus(paymentId, "succeeded");
-				if (payment != null) {
-					return ResponseEntity.ok("Payment status updated successfully");
+			String userId = request.get("userId");
+			String email = request.get("email");
+
+			if (userId == null || email == null) {
+				return ResponseEntity.badRequest().body("Missing required parameters: userId or email");
+			}
+			List<PaymentEntity> userPayments = paymentRepository.findByCustomerEmail(email);
+
+			if (userPayments.isEmpty()) {
+				return ResponseEntity.badRequest().body("No payments found for the given email.");
+			}
+			List<PaymentEntity> updatedPayments = new LinkedList<>();
+			for (PaymentEntity payment : userPayments) {
+				String paymentId = payment.getPaymentId();
+				PaymentIntent paymentIntent = stripeService.retrievePaymentIntent(paymentId);
+
+				if ("succeeded".equals(paymentIntent.getStatus())) {
+					PaymentEntity updatedPayment = stripeService.updatePaymentStatus(paymentId, "succeeded");
+					updatedPayments.add(updatedPayment);
 				}
 			}
-			return ResponseEntity.ok("Payment is not completed yet");
+
+			if (updatedPayments.isEmpty()) {
+				return ResponseEntity.ok("No successful payments found to update.");
+			}
+			ChatEntity updatedUser = chatService.updateUserCreditsByPayments(userId);
+
+			Map<String, Object> response = new HashMap<>();
+			response.put("message", "Payments processed successfully");
+			response.put("userDetails", updatedUser);
+			response.put("payments", updatedPayments);
+
+			return ResponseEntity.ok(response);
 
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Error updating payment: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
 		}
 	}
-	
-	  @PostMapping("/webhook")
-	    public ResponseEntity<String> handleWebhook(@RequestBody String payload,
-	                                                @RequestHeader("Stripe-Signature") String sigHeader) {
-	        try {
-	            // Convert JSON payload to Stripe Event object
-	            Event event = Event.GSON.fromJson(payload, Event.class);
 
-	            if ("payment_intent.succeeded".equals(event.getType())) {
-	                // Extract Payment Intent object
-	                PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
-
-	                if (paymentIntent != null) {
-	                    String paymentId = paymentIntent.getId();
-	                    stripeService.updatePaymentStatus(paymentId, "succeeded");
-	                    System.out.println("✅ Payment status updated for: " + paymentId);
-	                }
-	            }
-
-	            return ResponseEntity.ok("Webhook received");
-
-	        } catch (Exception e) {
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook error: " + e.getMessage());
-	        }
-	    }
-	
-	
-	@GetMapping("/payments-getby-email")
-	public ResponseEntity<?> getPaymentsByEmail(@RequestParam String email) {
-        List<PaymentEntity> payments = stripeService.getPaymentsByEmail(email);
-        if (payments.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No payments found for this email.");
-        }
-        return ResponseEntity.ok(payments);
-    }
-	
 }

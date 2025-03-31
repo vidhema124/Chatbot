@@ -36,7 +36,7 @@ public class StripeServiceImpl implements StripeService {
 
 	@Override
 	public PaymentIntent retrievePaymentIntent(String paymentId) throws StripeException {
-		return PaymentIntent.retrieve(paymentId); // Stripe API key is set globally in StripeConfig
+		return PaymentIntent.retrieve(paymentId); 
 	}
 
 	@Override

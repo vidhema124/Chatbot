@@ -1,5 +1,6 @@
 package chatbot.service;
 
+import chatbot.entity.ChatEntity;
 import chatbot.entity.PaymentEntity;
 import chatbot.entity.PaymentRequestDto;
 
@@ -10,10 +11,15 @@ import java.util.List;
 import java.util.Map;
 
 public interface StripeService {
-//    PaymentIntent createPaymentIntent(Map<String, Object> paymentRequest) throws StripeException;
-    PaymentEntity savePayment(PaymentEntity payment);
+
+	PaymentEntity savePayment(PaymentEntity payment);
+
 	PaymentIntent createPaymentIntent(PaymentRequestDto paymentRequest) throws StripeException;
+
 	PaymentIntent retrievePaymentIntent(String paymentId) throws StripeException;
-    PaymentEntity updatePaymentStatus(String paymentId, String status);
-    List<PaymentEntity> getPaymentsByEmail(String email);
+
+	PaymentEntity updatePaymentStatus(String paymentId, String status);
+
+	List<PaymentEntity> getPaymentsByEmail(String email);
+
 }

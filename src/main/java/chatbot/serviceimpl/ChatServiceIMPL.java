@@ -219,55 +219,54 @@ public class ChatServiceIMPL implements ChatService {
 	public ChatEntity chatUpdate(ChatEntity chatEntity) {
 		return chatRepository.save(chatEntity);
 	}
-	
+
 	@Override
 	public ChatEntity updateUserCreditsByPayments(String userId) {
-	    Optional<ChatEntity> userOptional = chatRepository.findById(userId);
+		Optional<ChatEntity> userOptional = chatRepository.findById(userId);
 
-	    if (userOptional.isEmpty()) {
-	        throw new RuntimeException("User not found");
-	    }
+		if (userOptional.isEmpty()) {
+			throw new RuntimeException("User not found");
+		}
 
-	    ChatEntity user = userOptional.get();
-	    List<PaymentEntity> payments = paymentRepository.findByCustomerEmail(user.getEmail());
+		ChatEntity user = userOptional.get();
+		List<PaymentEntity> payments = paymentRepository.findByCustomerEmail(user.getEmail());
 
-	    if (payments.isEmpty()) {
-	        throw new RuntimeException("No payments found for this user");
-	    }
+		if (payments.isEmpty()) {
+			throw new RuntimeException("No payments found for this user");
+		}
 
-	    double totalCredits = user.getCredits(); 
+		double totalCredits = user.getCredits();
 
-	    for (PaymentEntity payment : payments) {
-	        if ("succeeded".equals(payment.getStatus()) && payment.isAmountStatus()) {
-	            double amountInDollars = payment.getAmount() / 100.0;
-	            totalCredits += amountInDollars * 10;
+		for (PaymentEntity payment : payments) {
+			if ("succeeded".equals(payment.getStatus()) && payment.isAmountStatus()) {
+				double amountInDollars = payment.getAmount() / 100.0;
+				totalCredits += amountInDollars * 10;
 
-	            payment.setAmountStatus(false);
-	            paymentRepository.save(payment);
-	        }
-	    }
+				payment.setAmountStatus(false);
+				paymentRepository.save(payment);
+			}
+		}
 
-	    user.setCredits(totalCredits);
+		user.setCredits(totalCredits);
 
-	    if (totalCredits > 20) {
-	        user.setPlans("premium");
-	    } else {
-	        user.setPlans("free");
-	    } 
+		if (totalCredits > 20) {
+			user.setPlans("premium");
+		} else {
+			user.setPlans("free");
+		}
 
-	    return chatRepository.save(user);
+		return chatRepository.save(user);
 	}
+
 	@Override
 	public ResponseEntity<?> getUserById(String userId) {
-	    Optional<ChatEntity> userOptional = chatRepository.findById(userId);
-	    
-	    if (userOptional.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-	                .body(Map.of("message", "User not found"));
-	    }
+		Optional<ChatEntity> userOptional = chatRepository.findById(userId);
 
-	    return ResponseEntity.ok(userOptional.get());
+		if (userOptional.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+		}
+
+		return ResponseEntity.ok(userOptional.get());
 	}
-
 
 }

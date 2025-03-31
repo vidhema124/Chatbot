@@ -19,5 +19,5 @@ public class PaymentEntity {
 	private String name;
 	private LocalDateTime createDate;
 	private boolean amountStatus = true;
-
+    
 }

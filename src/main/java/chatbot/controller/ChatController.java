@@ -116,17 +116,4 @@ public class ChatController {
 		return chatService.createUser(chatEntity);
 	}
 
-	@GetMapping("/update-credits/{userId}")
-	public ResponseEntity<?> updateCredits(@PathVariable String userId) {
-		try {
-			ChatEntity updatedUser = chatService.updateUserCreditsByPayments(userId);
-			return ResponseEntity.ok(updatedUser);
-		} catch (Exception e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		}
-	}
-	@GetMapping("/user-by-id/{userId}")
-	public ResponseEntity<?> getUserById(@PathVariable String userId) {
-	    return chatService.getUserById(userId);
-	}
 }
