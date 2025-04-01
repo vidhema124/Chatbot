@@ -45,19 +45,20 @@ public class ChatServiceIMPL implements ChatService {
 			ChatEntity userData = user.get();
 
 			if (userData.isGoogleLogin()) {
+
+				if (password != null && !password.trim().isEmpty()) {
+					return createErrorResponse("User not found");
+				}
 				return generateLoginResponse(userData);
 			}
-
-			if (!userData.isGoogleLogin()) {
-				if (password == null || password.trim().isEmpty()) {
-					return createErrorResponse("Please Signup First......");
-				}
-				if (passwordEncoder.matches(password, userData.getPassword())) {
-					if (userData.isVerified()) {
-						return generateLoginResponse(userData);
-					} else {
-						return createErrorResponse("Please check your email and verify your email address.");
-					}
+			if (password == null || password.trim().isEmpty()) {
+				return createErrorResponse("Please Signup First,");
+			}
+			if (passwordEncoder.matches(password, userData.getPassword())) {
+				if (userData.isVerified()) {
+					return generateLoginResponse(userData);
+				} else {
+					return createErrorResponse("Please check your email and verify your email address.");
 				}
 			}
 		}

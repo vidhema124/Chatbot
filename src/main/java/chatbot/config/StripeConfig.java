@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 @Component
-@ConfigurationProperties(prefix = "stripe") // 👈 Matches "stripe.secret-key" in application.properties
+@ConfigurationProperties(prefix = "stripe") 
 @Getter
 @Setter
 public class StripeConfig {
@@ -18,6 +18,6 @@ public class StripeConfig {
 
     @PostConstruct
     public void init() {
-        Stripe.apiKey = this.secretKey; // 👈 Set Stripe API key globally
+        Stripe.apiKey = this.secretKey; 
     }
 }
