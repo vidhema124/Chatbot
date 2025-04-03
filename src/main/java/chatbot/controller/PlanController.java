@@ -16,6 +16,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/plans")
+@CrossOrigin(origins = { "http://localhost:3000", "https://vchatai.netlify.app" })
 @RequiredArgsConstructor
 public class PlanController {
 
