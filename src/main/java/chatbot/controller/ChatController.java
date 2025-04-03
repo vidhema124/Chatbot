@@ -43,22 +43,53 @@ public class ChatController {
 	}
 
 	@PutMapping("/update/{id}")
-	public ResponseEntity<Map<String, String>> updateProductById(@PathVariable String id,
-			@RequestBody ChatEntity chatEntity) {
-		Optional<ChatEntity> emp = chatService.findById(id);
+	public ResponseEntity<Map<String, String>> updateProductById(
+	        @PathVariable String id, @RequestBody Map<String, Object> updates) {
+	    
+	    Optional<ChatEntity> existingChatOpt = chatService.findById(id);
 
-		if (emp.isPresent()) {
-			chatEntity.setId(id);
-			chatService.chatUpdate(chatEntity);
-			Map<String, String> response = new HashMap<>();
-			response.put("message", "Product details updated successfully");
-			return ResponseEntity.ok(response);
-		} else {
-			Map<String, String> errorResponse = new HashMap<>();
-			errorResponse.put("error", "Product details not exist");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-		}
+	    if (existingChatOpt.isPresent()) {
+	        ChatEntity existingChat = existingChatOpt.get();
+
+	        // Update only provided fields
+	        updates.forEach((key, value) -> {
+	            switch (key) {
+	                case "name":
+	                    existingChat.setName((String) value);
+	                    break;
+	                case "email":
+	                    existingChat.setEmail((String) value);
+	                    break;
+	                case "image":
+	                    existingChat.setImage((String) value);
+	                    break;
+	                case "verified":
+	                    existingChat.setVerified((Boolean) value);
+	                    break;
+	                case "googleVerification":
+	                    existingChat.setGoogleVerification((Boolean) value);
+	                    break;
+	                case "isGoogleLogin":
+	                    existingChat.setGoogleLogin((Boolean) value);
+	                    break;
+	                case "credits":
+	                    existingChat.setCredits(((Number) value).doubleValue());
+	                    break;
+	            }
+	        });
+
+	        chatService.chatUpdate(existingChat);
+
+	        Map<String, String> response = new HashMap<>();
+	        response.put("message", "Product details updated successfully");
+	        return ResponseEntity.ok(response);
+	    } else {
+	        Map<String, String> errorResponse = new HashMap<>();
+	        errorResponse.put("error", "Product details not exist");
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+	    }
 	}
+
 
 	@GetMapping("/verify-link")
 	public ResponseEntity<?> verifyUser(@RequestParam String token) {
