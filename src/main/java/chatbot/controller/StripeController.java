@@ -58,6 +58,7 @@ public class StripeController {
 			payment.setStatus(paymentIntent.getStatus());
 			payment.setAmount(paymentRequest.getAmount());
 			payment.setName(paymentRequest.getName());
+			payment.setPlanId(paymentRequest.getPlanId());
 
 			stripeService.savePayment(payment);
 			Map<String, Object> response = new HashMap<>();

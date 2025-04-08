@@ -27,8 +27,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import chatbot.entity.ChatEntity;
 import chatbot.entity.ChatMessage;
+import chatbot.entity.PaymentEntity;
 import chatbot.respository.ChatMessageRepository;
 import chatbot.respository.ChatRepository;
+import chatbot.respository.PaymentRepository;
 import chatbot.service.ChatbotMessageService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,9 @@ public class ChatMessageController {
 	private final ChatRepository chatRepository;
 	private final ChatbotMessageService chatbotService;
 	private final ChatMessageRepository chatMessageRepository;
+	@Autowired
+	private PaymentRepository paymentRepository;
+
 
 	@Autowired
 	public ChatMessageController(ChatbotMessageService chatbotService, ChatMessageRepository chatMessageRepository ,ChatRepository chatRepository) {
@@ -89,24 +94,24 @@ public class ChatMessageController {
 		return ResponseEntity.ok(chatHistory);
 	}
 
+
 	@GetMapping("/get-by-userid/{userId}")
 	public ResponseEntity<Map<String, Object>> getChatMessagesByUserId(@PathVariable String userId) {
-	    ObjectId objectId = new ObjectId(userId);
 
-	    // Fetch chat messages for the user
 	    List<ChatMessage> chatMessages = chatbotService.getByUserId(userId);
 
-	    // Fetch user's credits
 	    ChatEntity chatEntity = chatRepository.findById(userId).orElse(null);
+	    
 	    double credits = (chatEntity != null) ? chatEntity.getCredits() : 0.0;
+	    String planId = (chatEntity != null) ? chatEntity.getPlanId() : null;
 
-	    // Prepare response
 	    Map<String, Object> response = new HashMap<>();
 	    response.put("credits", credits);
-	    
+	    response.put("planId", planId);
+
 	    if (chatMessages.isEmpty()) {
 	        response.put("message", "No chats found for this user");
-	        return ResponseEntity.ok(response); // Status 200
+	        return ResponseEntity.ok(response);
 	    }
 
 	    response.put("chatMessages", chatMessages);

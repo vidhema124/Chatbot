@@ -223,43 +223,7 @@ public class ChatServiceIMPL implements ChatService {
 	
 	
 	
-	@Override
-	public ChatEntity updateUserCreditsByPayments(String userId) {
-	    Optional<ChatEntity> userOptional = chatRepository.findById(userId);
 
-	    if (userOptional.isEmpty()) {
-	        throw new RuntimeException("User not found");
-	    }
-
-	    ChatEntity user = userOptional.get();
-	    List<PaymentEntity> payments = paymentRepository.findByCustomerEmail(user.getEmail());
-
-	    if (payments.isEmpty()) {
-	        throw new RuntimeException("No payments found for this user");
-	    }
-
-	    double totalCredits = user.getCredits();
-	    String latestPlanId = user.getPlanId(); 
-
-	    for (PaymentEntity payment : payments) {
-	        if ("succeeded".equals(payment.getStatus()) && !payment.isAmountStatus()) {
-	            double amountInDollars = payment.getAmount() / 100.0;
-	            totalCredits += amountInDollars * 10;
-
-	            if (payment.getPlanId() != null) {
-	                latestPlanId = payment.getPlanId();
-	            }
-
-	            payment.setAmountStatus(true);
-	            paymentRepository.save(payment);
-	        }
-	    }
-
-	    user.setCredits(totalCredits);
-	    user.setPlanId(latestPlanId); 
-
-	    return chatRepository.save(user);
-	}
 
 
 
@@ -291,15 +255,49 @@ public class ChatServiceIMPL implements ChatService {
 //		}
 //
 //		user.setCredits(totalCredits);
-//
-//		if (totalCredits > 20) {
-//			user.setPlans("premium");
-//		} else {
-//			user.setPlans("free");
-//		}
-//
 //		return chatRepository.save(user);
 //	}
+	
+	@Override
+	public ChatEntity updateUserCreditsByPayments(String userId) {
+	    Optional<ChatEntity> userOptional = chatRepository.findById(userId);
+
+	    if (userOptional.isEmpty()) {
+	        throw new RuntimeException("User not found");
+	    }
+
+	    ChatEntity user = userOptional.get();
+	    List<PaymentEntity> payments = paymentRepository.findByCustomerEmail(user.getEmail());
+
+	    if (payments.isEmpty()) {
+	        throw new RuntimeException("No payments found for this user");
+	    }
+
+	    double totalCredits = user.getCredits();
+
+	    for (PaymentEntity payment : payments) {
+	        if ("succeeded".equals(payment.getStatus())) {
+	            // ✅ Always update planId if it's provided
+	            if (payment.getPlanId() != null && !payment.getPlanId().isEmpty()) {
+	                user.setPlanId(payment.getPlanId());
+	            }
+
+	            // ✅ Update credits only if not already counted
+	            if (payment.isAmountStatus()) {
+	                double amountInDollars = payment.getAmount() / 100.0;
+	                totalCredits += amountInDollars * 10;
+
+	                payment.setAmountStatus(false);
+	                paymentRepository.save(payment);
+	            }
+	        }
+	    }
+
+	    user.setCredits(totalCredits);
+	    return chatRepository.save(user); // ✅ Return saved user with updated planId and credits
+	}
+
+
 
 	@Override
 	public ResponseEntity<?> getUserById(String userId) {

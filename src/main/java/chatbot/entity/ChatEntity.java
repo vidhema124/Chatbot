@@ -21,8 +21,6 @@ public class ChatEntity {
 	private boolean googleVerification;
 	private boolean isGoogleLogin;
 	private double credits;
-//	private String plans = "free";
-	
 	private String planId;
 
 }

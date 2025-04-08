@@ -20,5 +20,6 @@ public class PaymentEntity {
 	private LocalDateTime createDate;
 	private boolean amountStatus = true;
 	private String planId;
+	
     
 }
