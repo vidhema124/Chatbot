@@ -252,7 +252,7 @@ public class ChatMessageController {
   
 	  
 	    
-	    @PostMapping("/search") 
+	    @GetMapping("/search") 
 	    public ResponseEntity<Map<String, Object>> uploadFiles(
 	            @RequestParam("userId") ObjectId userId,
 	            @RequestParam(value = "file", required = false) MultipartFile file,  // Make 'file' optional
