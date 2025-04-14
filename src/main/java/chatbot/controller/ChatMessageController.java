@@ -12,6 +12,7 @@ import java.util.Optional;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -196,7 +197,7 @@ public class ChatMessageController {
 		}
 	}
 
-    @GetMapping("/search")
+    @GetMapping("kkkkkkk")
     public ResponseEntity<Map<String, Object>> chat(@RequestParam ObjectId userId, @RequestParam String message) {
         String decodedMessage = URLDecoder.decode(message, StandardCharsets.UTF_8);
         return chatbotService.getChatResponse(userId, decodedMessage);
@@ -248,4 +249,15 @@ public class ChatMessageController {
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
+  
+	  
+	    
+	    @PostMapping("/search") 
+	    public ResponseEntity<Map<String, Object>> uploadFiles(
+	            @RequestParam("userId") ObjectId userId,
+	            @RequestParam(value = "file", required = false) MultipartFile file,  // Make 'file' optional
+	            @RequestParam(value = "message", required = false) String message) {
+	        return chatbotService.handleFileUpload1(userId, file, message);
+	    }
+
 }

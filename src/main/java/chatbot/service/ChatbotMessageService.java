@@ -26,4 +26,6 @@ public interface ChatbotMessageService {
 	String getImageResponse(String prompt);
 	Map<String, Object> analyzePDF(MultipartFile file, String userId);
 	
+	ResponseEntity<Map<String, Object>> handleFileUpload1(ObjectId userId, MultipartFile file, String message);
+	
 }

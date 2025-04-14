@@ -2,6 +2,7 @@ package chatbot.serviceimpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import chatbot.config.GeminiConfig;
 import chatbot.config.OpenAIConfig;
@@ -334,5 +337,105 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	    }
 	    return text;
 	}
+	
+	 @Override
+	 public ResponseEntity<Map<String, Object>> handleFileUpload1(ObjectId userId, MultipartFile file, String message) {
+	     Map<String, Object> responseMap = new HashMap<>();
+
+	     // Check if user exists
+	     Optional<ChatEntity> optionalUser = chatRepository.findById(userId.toString());
+	     if (optionalUser.isEmpty()) {
+	         responseMap.put("message", "User not found.");
+	         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMap);
+	     }
+
+	     ChatEntity user = optionalUser.get();
+	     if (user.getCredits() < 0.5) {
+	         responseMap.put("message", "Insufficient credits.");
+	         return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(responseMap);
+	     }
+
+	     user.setCredits(user.getCredits() - 0.5);
+	     chatRepository.save(user);
+
+	     try {
+	         // If file is present, process the file
+	         if (file != null && !file.isEmpty()) {
+	             String base64Image = Base64.getEncoder().encodeToString(file.getBytes());
+
+	             List<Map<String, Object>> parts = new ArrayList<>();
+	             parts.add(Map.of("inlineData", Map.of(
+	                     "mimeType", file.getContentType(),
+	                     "data", base64Image
+	             )));
+
+	             if (message != null && !message.isBlank()) {
+	                 parts.add(Map.of("text", message));
+	             }
+
+	             Map<String, Object> payload = Map.of("contents", List.of(Map.of("parts", parts)));
+
+	             HttpHeaders headers = new HttpHeaders();
+	             headers.setContentType(MediaType.APPLICATION_JSON);
+	             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
+
+	             String apiUrl = geminiConfig.getUrl() + "?key=" + geminiConfig.getKey();
+	             ResponseEntity<String> geminiResponse = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
+
+	             if (geminiResponse.getStatusCode() == HttpStatus.OK) {
+	                 ObjectMapper objectMapper = new ObjectMapper();
+	                 JsonNode jsonNode = objectMapper.readTree(geminiResponse.getBody());
+	                 String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+
+	                 responseMap.put("botResponse", botResponse);
+	                 responseMap.put("remainingCredits", user.getCredits());
+	                 responseMap.put("ModelType", "Gemini");
+	                 return ResponseEntity.ok(responseMap);
+	             } else {
+	                 responseMap.put("status", "error");
+	                 responseMap.put("message", "Failed to get response from Gemini.");
+	                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
+	             }
+	         } else if (message != null && !message.isBlank()) {
+	             // If no file, but message is provided, process only the message
+	             List<Map<String, Object>> parts = new ArrayList<>();
+	             parts.add(Map.of("text", message));
+
+	             Map<String, Object> payload = Map.of("contents", List.of(Map.of("parts", parts)));
+
+	             HttpHeaders headers = new HttpHeaders();
+	             headers.setContentType(MediaType.APPLICATION_JSON);
+	             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
+
+	             String apiUrl = geminiConfig.getUrl() + "?key=" + geminiConfig.getKey();
+	             ResponseEntity<String> geminiResponse = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
+
+	             if (geminiResponse.getStatusCode() == HttpStatus.OK) {
+	                 ObjectMapper objectMapper = new ObjectMapper();
+	                 JsonNode jsonNode = objectMapper.readTree(geminiResponse.getBody());
+	                 String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+
+	                 responseMap.put("botResponse", botResponse);
+	                 responseMap.put("remainingCredits", user.getCredits());
+	                 responseMap.put("ModelType", "Gemini");
+	                 return ResponseEntity.ok(responseMap);
+	             } else {
+	                 responseMap.put("status", "error");
+	                 responseMap.put("message", "Failed to get response from Gemini.");
+	                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
+	             }
+	         } else {
+	             responseMap.put("message", "No file or message provided.");
+	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMap);
+	         }
+
+	     } catch (Exception e) {
+	         e.printStackTrace();
+	         responseMap.put("status", "error");
+	         responseMap.put("message", "Something went wrong while processing.");
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseMap);
+	     }
+	 }
+
 
 }
