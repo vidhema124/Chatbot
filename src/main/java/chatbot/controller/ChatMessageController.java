@@ -255,7 +255,15 @@ public class ChatMessageController {
 	    @GetMapping("/search") 
 	    public ResponseEntity<Map<String, Object>> uploadFiles(
 	            @RequestParam("userId") ObjectId userId,
-	            @RequestParam(value = "file", required = false) MultipartFile file,  // Make 'file' optional
+	            @RequestParam(value = "file", required = false) MultipartFile file,  
+	            @RequestParam(value = "message", required = false) String message) {
+	        return chatbotService.handleFileUpload1(userId, file, message);
+	    }
+	    
+	    @PostMapping("/searchs") 
+	    public ResponseEntity<Map<String, Object>> uploadFiless(
+	            @RequestParam("userId") ObjectId userId,
+	            @RequestParam(value = "file", required = false) MultipartFile file,  
 	            @RequestParam(value = "message", required = false) String message) {
 	        return chatbotService.handleFileUpload1(userId, file, message);
 	    }
