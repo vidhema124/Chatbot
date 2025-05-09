@@ -1,6 +1,7 @@
 package chatbot.serviceimpl;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -12,8 +13,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -26,8 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import chatbot.config.GeminiConfig;
 import chatbot.config.OpenAIConfig;
@@ -36,8 +33,6 @@ import chatbot.entity.ChatMessage;
 import chatbot.respository.ChatMessageRepository;
 import chatbot.respository.ChatRepository;
 import chatbot.service.ChatbotMessageService;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 @Service
 
@@ -415,6 +410,19 @@ public class ChatMessageServiceImpl implements ChatbotMessageService {
 	                 JsonNode jsonNode = objectMapper.readTree(geminiResponse.getBody());
 	                 String botResponse = jsonNode.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
 
+	                 ChatMessage chatMessage = ChatMessage.builder()
+	                         .userId(userId)
+	                         .type("Gemini")
+	                         .userSearch(List.of(
+	                                 ChatMessage.UserSearch.builder()
+	                                         .userMessage(message)
+	                                         .botResponse(botResponse)
+	                                         .build()
+	                         ))
+	                         .timestamp(LocalDateTime.now())
+	                         .build();
+
+	                 chatMessageRepository.save(chatMessage);
 	                 responseMap.put("botResponse", botResponse);
 	                 responseMap.put("remainingCredits", user.getCredits());
 	                 responseMap.put("ModelType", "Gemini");
