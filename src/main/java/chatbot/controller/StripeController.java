@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/stripe")
-@CrossOrigin(origins = { "http://localhost:3000", "https://vchatai.netlify.app" })
+@CrossOrigin(origins = { "http://localhost:3000", "https://vchatai.netlify.app", "https://vchatai.xplorgpt.com"})
 @RequiredArgsConstructor
 public class StripeController {
 

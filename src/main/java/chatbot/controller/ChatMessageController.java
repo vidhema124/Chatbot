@@ -38,7 +38,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/chatbot")
-@CrossOrigin(origins = { "http://localhost:3000", "https://vchatai.netlify.app" })
+@CrossOrigin(origins = { "http://localhost:3000", "https://vchatai.netlify.app", "https://vchatai.xplorgpt.com" })
 public class ChatMessageController {
 
 	private final ChatRepository chatRepository;
